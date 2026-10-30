@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>오늘먼지</title>
+<meta name="description" content="광고 없는 미세먼지·초미세먼지 확인 앱">
+<meta name="theme-color" content="#eef3f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11161b" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="오늘먼지">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one grade-tinted band holds the verdict and both readings on the 환경부 scale; forecasts and places sit below on the plain ground. */
+:root {
+  --bg: #eef3f7;
+  --surface: #ffffff;
+  --fg: #16202a;
+  --muted: #5d6b78;
+  --line: #d5dee6;
+  --accent: #2c5d86;
+  --g1: #1f6fd1; --g1-soft: #dcebfb;
+  --g2: #1e9a5b; --g2-soft: #dcf3e6;
+  --g3: #d9770b; --g3-soft: #fdeccf;
+  --g4: #d23a3a; --g4-soft: #fadede;
+  --g0: #7c8995; --g0-soft: #e3e9ee;
+  --font-display: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161b; --surface: #1a2128; --fg: #e6edf3; --muted: #93a1ad; --line: #2b353f; --accent: #8cb9e0;
+    --g1: #6aaaf5; --g1-soft: #13283f;
+    --g2: #5ccf92; --g2-soft: #12301f;
+    --g3: #f3a94a; --g3-soft: #3a2810;
+    --g4: #f47878; --g4-soft: #3d1717;
+    --g0: #93a1ad; --g0-soft: #222b33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161b; --surface: #1a2128; --fg: #e6edf3; --muted: #93a1ad; --line: #2b353f; --accent: #8cb9e0;
+  --g1: #6aaaf5; --g1-soft: #13283f;
+  --g2: #5ccf92; --g2-soft: #12301f;
+  --g3: #f3a94a; --g3-soft: #3a2810;
+  --g4: #f47878; --g4-soft: #3d1717;
+  --g0: #93a1ad; --g0-soft: #222b33;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.wrap {
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Places bar */
+.top { display: flex; flex-direction: column; gap: 10px; padding-block: 14px 10px; }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; }
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 0 12px; border-radius: 18px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500;
+}
+.icon-btn svg { width: 16px; height: 16px; }
+.icon-btn.spinning svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 0 14px; border-radius: 17px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 14px; white-space: nowrap;
+}
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.chip .x { display: none; font-size: 16px; line-height: 1; opacity: .7; }
+.editing .chip .x { display: inline; }
+.chip.add { color: var(--muted); }
+
+/* Search sheet */
+.search { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
+.search input {
+  width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface);
+}
+.results { list-style: none; margin: 0; padding: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.results:empty { display: none; }
+.results button { display: block; width: 100%; text-align: left; padding: 11px 14px; background: none; border: 0; border-top: 1px solid var(--line); }
+.results li:first-child button { border-top: 0; }
+.results small { color: var(--muted); margin-left: 6px; }
+
+/* Verdict band */
+.band { background: var(--tone-soft); transition: background .4s ease; }
+.band[data-grade="1"] { --tone: var(--g1); --tone-soft: var(--g1-soft); }
+.band[data-grade="2"] { --tone: var(--g2); --tone-soft: var(--g2-soft); }
+.band[data-grade="3"] { --tone: var(--g3); --tone-soft: var(--g3-soft); }
+.band[data-grade="4"] { --tone: var(--g4); --tone-soft: var(--g4-soft); }
+.band, .band[data-grade="0"] { --tone: var(--g0); --tone-soft: var(--g0-soft); }
+.band .wrap { padding-block: 22px 26px; display: flex; flex-direction: column; gap: 22px; }
+.where { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--muted); }
+.where strong { color: var(--fg); font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.where time { flex: none; font-family: var(--font-data); font-size: 12px; }
+.verdict { display: flex; flex-direction: column; gap: 6px; }
+.verdict .word { font-family: var(--font-display); font-size: clamp(64px, 22vw, 104px); line-height: .95; color: var(--tone); letter-spacing: -.01em; }
+.verdict .advice { font-size: 15px; max-width: 32ch; text-wrap: pretty; }
+
+.readings { display: grid; gap: 18px; }
+.reading { display: grid; gap: 8px; }
+.reading-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.reading-head .label { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+.reading-head .label span { color: var(--muted); font-weight: 400; margin-left: 4px; letter-spacing: 0; }
+.reading-head .val { font-family: var(--font-data); font-size: 26px; font-variant-numeric: tabular-nums; }
+.reading-head .val small { font-size: 12px; color: var(--muted); margin-left: 3px; }
+.reading-head .gname { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 6px; color: var(--surface); }
+.reading-head .right { display: flex; align-items: baseline; gap: 10px; }
+.scale { position: relative; height: 26px; }
+.scale .segs { position: absolute; left: 0; right: 0; top: 4px; height: 8px; display: flex; gap: 2px; }
+.scale .segs i { display: block; height: 100%; border-radius: 2px; opacity: .85; }
+.scale .ticks { position: absolute; left: 0; right: 0; top: 14px; height: 12px; font-family: var(--font-data); font-size: 10px; color: var(--muted); }
+.scale .ticks span { position: absolute; transform: translateX(-50%); }
+.scale .ticks span:first-child { transform: none; }
+.scale .pin { position: absolute; top: 0; width: 4px; height: 16px; margin-left: -2px; border-radius: 2px; background: var(--fg); box-shadow: 0 0 0 2px var(--tone-soft); transition: left .5s ease; }
+
+.minor { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.minor div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.minor dt { font-size: 12px; color: var(--muted); }
+.minor dd { margin: 0; font-family: var(--font-data); font-size: 15px; font-variant-numeric: tabular-nums; }
+.minor dd b { font-family: var(--font-body); font-size: 12px; font-weight: 600; margin-left: 6px; }
+
+/* Sections */
+main .wrap { padding-block: 22px 28px; display: flex; flex-direction: column; gap: 28px; }
+section h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
+section h2 span { font-weight: 400; letter-spacing: 0; }
+
+.hours { display: flex; gap: 2px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+.hour { flex: none; width: 46px; display: grid; grid-template-rows: auto 72px auto auto; justify-items: center; gap: 4px; scroll-snap-align: start; }
+.hour .t { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hour .t.now { color: var(--fg); font-weight: 600; }
+.hour .bar { width: 14px; align-self: end; border-radius: 4px 4px 2px 2px; min-height: 4px; }
+.hour .v { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
+.hour .v2 { font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.days { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.days li { display: grid; grid-template-columns: 4.2em 1fr auto auto; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
+.days li:first-child { border-top: 0; }
+.days .d { font-weight: 600; }
+.days .d small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.days .g { font-weight: 600; }
+.days .n { font-family: var(--font-data); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.days .n b { color: var(--fg); font-weight: 500; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; vertical-align: 1px; }
+
+.std { width: 100%; border-collapse: collapse; font-size: 13px; }
+.std th, .std td { padding: 7px 6px; text-align: center; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.std th { font-weight: 600; }
+.std td:first-child, .std th:first-child { text-align: left; }
+.std-wrap { overflow-x: auto; }
+
+.note { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.note a { color: var(--accent); }
+.msg { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+
+.g1c { color: var(--g1); } .g2c { color: var(--g2); } .g3c { color: var(--g3); } .g4c { color: var(--g4); } .g0c { color: var(--g0); }
+.g1b { background: var(--g1); } .g2b { background: var(--g2); } .g3b { background: var(--g3); } .g4b { background: var(--g4); } .g0b { background: var(--g0); }
+
+.skeleton .word, .skeleton .val { opacity: .35; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="wrap top">
+  <div class="top-row">
+    <div class="brand">오늘먼지</div>
+    <div style="display:flex;gap:8px">
+      <button class="icon-btn" id="editBtn" type="button" aria-pressed="false">편집</button>
+      <button class="icon-btn" id="refreshBtn" type="button" aria-label="새로고침">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+        새로고침
+      </button>
+    </div>
+  </div>
+  <div class="chips" id="chips" role="toolbar" aria-label="장소"></div>
+  <div class="search" id="searchBox" hidden>
+    <input id="searchInput" type="search" placeholder="동네 이름 검색 (예: 수원, 해운대, 강남)" autocomplete="off" enterkeyhint="search">
+    <ul class="results" id="results"></ul>
+  </div>
+</header>
+
+<div class="band skeleton" id="band" data-grade="0">
+  <div class="wrap">
+    <div class="where"><strong id="placeName">위치 확인 중</strong><time id="updated">--:--</time></div>
+    <div class="verdict">
+      <div class="word" id="word">····</div>
+      <div class="advice" id="advice">대기질 정보를 불러오고 있어요.</div>
+    </div>
+    <div class="readings">
+      <div class="reading" id="r-pm10"></div>
+      <div class="reading" id="r-pm25"></div>
+    </div>
+    <dl class="minor" id="minor"></dl>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+    <div class="msg" id="msg" hidden></div>
+
+    <section>
+      <h2>시간별 예보 <span>막대: 초미세먼지</span></h2>
+      <div class="hours" id="hours"></div>
+      <div class="legend"><span>위 숫자 초미세먼지</span><span>아래 숫자 미세먼지 (㎍/㎥)</span></div>
+    </section>
+
+    <section>
+      <h2>일별 예보 <span>하루 평균 기준</span></h2>
+      <ul class="days" id="days"></ul>
+    </section>
+
+    <section>
+      <h2>등급 기준 <span>환경부, ㎍/㎥</span></h2>
+      <div class="std-wrap">
+        <table class="std">
+          <thead><tr><th></th><th class="g1c">좋음</th><th class="g2c">보통</th><th class="g3c">나쁨</th><th class="g4c">매우나쁨</th></tr></thead>
+          <tbody>
+            <tr><td>미세먼지 PM10</td><td>0–30</td><td>31–80</td><td>81–150</td><td>151+</td></tr>
+            <tr><td>초미세먼지 PM2.5</td><td>0–15</td><td>16–35</td><td>36–75</td><td>76+</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="note">
+      데이터: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo 대기질 API</a>
+      (유럽 코페르니쿠스 CAMS 예측 모델). 측정소 실측값이 아니라 약 수십 km 격자의 모델 추정값이라
+      에어코리아 측정값과 차이가 날 수 있어요. 위치 이름은 BigDataCloud에서 가져와요. 광고와 추적 코드는 없어요.
+    </p>
+  </div>
+</main>
+
+<script>
+(() => {
+  const AIR = "https://air-quality-api.open-meteo.com/v1/air-quality";
+  const GEO = "https://geocoding-api.open-meteo.com/v1/search";
+  const REV = "https://api.bigdatacloud.net/data/reverse-geocode-client";
+  const STALE_MS = 10 * 60 * 1000;
+
+  // 환경부 등급 기준 (상한값 포함)
+  const STD = {
+    pm10: [30, 80, 150],
+    pm25: [15, 35, 75],
+    o3:   [0.030, 0.090, 0.150],  // ppm
+    no2:  [0.030, 0.060, 0.200],  // ppm
+  };
+  const NAMES = ["정보없음", "좋음", "보통", "나쁨", "매우나쁨"];
+  const ADVICE = [
+    "대기질 정보를 불러오지 못했어요.",
+    "공기가 깨끗해요. 환기하고 바깥 활동하기 좋은 날이에요.",
+    "무난한 날이에요. 민감한 분은 오래 밖에 있을 때만 조심하세요.",
+    "외출할 때 마스크(KF80 이상)를 챙기세요. 격한 운동은 실내에서 하세요.",
+    "가능하면 외출을 줄이고 창문을 닫아 두세요. 나갈 땐 KF94 마스크를 쓰세요.",
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  const grade = (v, cuts) => {
+    if (v == null || Number.isNaN(v)) return 0;
+    const r = Math.round(cuts[0] < 1 ? v * 1000 : v) / (cuts[0] < 1 ? 1000 : 1);
+    if (r <= cuts[0]) return 1;
+    if (r <= cuts[1]) return 2;
+    if (r <= cuts[2]) return 3;
+    return 4;
+  };
+  // ㎍/㎥ → ppm (25℃, 1기압)
+  const o3ppm = (ug) => ug == null ? null : ug / 1963;
+  const no2ppm = (ug) => ug == null ? null : ug / 1881;
+
+  let places = store.get("places", []);       // [{name, lat, lon}]
+  let selected = store.get("selected", "here"); // "here" or index as string
+  let here = store.get("here", null);          // {name, lat, lon}
+  let lastLoad = 0;
+  let editing = false;
+
+  // ---------- Places ----------
+  function renderChips() {
+    const box = $("chips");
+    box.textContent = "";
+    box.classList.toggle("editing", editing);
+    const mk = (label, key, removable) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.setAttribute("aria-pressed", String(selected === key));
+      const s = document.createElement("span"); s.textContent = label; b.append(s);
+      if (removable) { const x = document.createElement("span"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-hidden", "true"); b.append(x); }
+      b.addEventListener("click", () => {
+        if (editing && removable) { removePlace(Number(key)); return; }
+        selected = key; store.set("selected", selected); renderChips(); load(true);
+      });
+      return b;
+    };
+    box.append(mk("현재 위치", "here", false));
+    places.forEach((p, i) => box.append(mk(p.name, String(i), true)));
+    const add = document.createElement("button");
+    add.type = "button"; add.className = "chip add"; add.textContent = "+ 장소 추가";
+    add.addEventListener("click", () => {
+      const sb = $("searchBox"); sb.hidden = !sb.hidden;
+      if (!sb.hidden) $("searchInput").focus();
+    });
+    box.append(add);
+  }
+
+  function removePlace(i) {
+    places.splice(i, 1);
+    store.set("places", places);
+    if (selected === String(i)) selected = "here";
+    else if (selected !== "here" && Number(selected) > i) selected = String(Number(selected) - 1);
+    store.set("selected", selected);
+    renderChips();
+    if (!places.length) setEditing(false);
+    load(true);
+  }
+
+  function setEditing(on) {
+    editing = on;
+    $("editBtn").setAttribute("aria-pressed", String(on));
+    $("editBtn").textContent = on ? "완료" : "편집";
+    renderChips();
+  }
+  $("editBtn").addEventListener("click", () => setEditing(!editing));
+
+  let searchTimer;
+  $("searchInput").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    const q = e.target.value.trim();
+    if (q.length < 2) { $("results").textContent = ""; return; }
+    searchTimer = setTimeout(() => search(q), 300);
+  });
+
+  async function search(q) {
+    const ul = $("results");
+    try {
+      const url = `${GEO}?name=${encodeURIComponent(q)}&count=8&language=ko&format=json&countryCode=KR`;
+      const res = await fetch(url);
+      const data = await res.json();
+      ul.textContent = "";
+      const list = data.results || [];
+      if (!list.length) {
+        const li = document.createElement("li");
+        const b = document.createElement("button"); b.type = "button"; b.disabled = true;
+        b.textContent = "검색 결과가 없어요. 시·군·구 이름으로 다시 찾아보세요.";
+        li.append(b); ul.append(li); return;
+      }
+      for (const r of list) {
+        const li = document.createElement("li");
+        const b = document.createElement("button"); b.type = "button";
+        b.textContent = r.name;
+        const sm = document.createElement("small");
+        sm.textContent = [r.admin1, r.admin2].filter(Boolean).join(" ");
+        b.append(sm);
+        b.addEventListener("click", () => {
+          places.push({ name: r.name, lat: r.latitude, lon: r.longitude });
+          store.set("places", places);
+          selected = String(places.length - 1); store.set("selected", selected);
+          $("searchInput").value = ""; ul.textContent = ""; $("searchBox").hidden = true;
+          renderChips(); load(true);
+        });
+        li.append(b); ul.append(li);
+      }
+    } catch {
+      ul.textContent = "";
+      const li = document.createElement("li");
+      const b = document.createElement("button"); b.type = "button"; b.disabled = true;
+      b.textContent = "검색하지 못했어요. 인터넷 연결을 확인해 주세요.";
+      li.append(b); ul.append(li);
+    }
+  }
+
+  // ---------- Location ----------
+  function locate() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) return reject(new Error("unsupported"));
+      navigator.geolocation.getCurrentPosition(
+        (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
+        (e) => reject(e),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
+      );
+    });
+  }
+  async function placeName(lat, lon) {
+    try {
+      const r = await fetch(`${REV}?latitude=${lat}&longitude=${lon}&localityLanguage=ko`);
+      const d = await r.json();
+      const parts = [d.city || d.principalSubdivision, d.locality].filter(Boolean);
+      const uniq = parts.filter((v, i) => parts.indexOf(v) === i);
+      return uniq.join(" ") || "현재 위치";
+    } catch { return "현재 위치"; }
+  }
+
+  async function currentTarget() {
+    if (selected !== "here" && places[Number(selected)]) return places[Number(selected)];
+    selected = "here";
+    try {
+      const { lat, lon } = await locate();
+      const moved = !here || Math.abs(here.lat - lat) > 0.01 || Math.abs(here.lon - lon) > 0.01;
+      const name = moved || !here?.name || here.name === "현재 위치" ? await placeName(lat, lon) : here.name;
+      here = { name, lat, lon };
+      store.set("here", here);
+      hideMsg();
+      return here;
+    } catch (e) {
+      if (here) { showMsg("위치를 새로 확인하지 못해 마지막으로 확인한 위치를 보여드려요."); return here; }
+      showMsg("위치 권한이 없어 서울 기준으로 보여드려요. 브라우저 설정에서 위치를 허용하거나 ‘+ 장소 추가’로 동네를 등록하세요.");
+      return { name: "서울 (기본값)", lat: 37.5665, lon: 126.978 };
+    }
+  }
+
+  function showMsg(t) { const m = $("msg"); m.textContent = t; m.hidden = false; }
+  function hideMsg() { $("msg").hidden = true; }
+
+  // ---------- Data ----------
+  async function fetchAir(lat, lon) {
+    const q = new URLSearchParams({
+      latitude: lat.toFixed(4), longitude: lon.toFixed(4),
+      current: "pm10,pm2_5,ozone,nitrogen_dioxide",
+      hourly: "pm10,pm2_5",
+      forecast_days: "5",
+      timezone: "Asia/Seoul",
+    });
+    const res = await fetch(`${AIR}?${q}`);
+    if (!res.ok) throw new Error("http " + res.status);
+    return res.json();
+  }
+
+  let loading = false;
+  async function load(force) {
+    if (loading) return;
+    if (!force && Date.now() - lastLoad < STALE_MS) return;
+    loading = true;
+    $("refreshBtn").classList.add("spinning");
+    try {
+      const t = await currentTarget();
+      const data = await fetchAir(t.lat, t.lon);
+      const snapshot = { place: t.name, data, at: Date.now() };
+      store.set("last:" + selected, snapshot);
+      render(snapshot);
+      lastLoad = Date.now();
+    } catch (e) {
+      const cached = store.get("last:" + selected, null);
+      if (cached) { render(cached); showMsg("최신 정보를 받지 못해 저장해 둔 정보를 보여드려요. 인터넷 연결을 확인해 주세요."); }
+      else { renderEmpty(); showMsg("대기질 정보를 받지 못했어요. 인터넷 연결을 확인한 뒤 새로고침을 눌러 주세요."); }
+    } finally {
+      loading = false;
+      $("refreshBtn").classList.remove("spinning");
+    }
+  }
+
+  // ---------- Render ----------
+  function scaleHTML(v, cuts, max) {
+    const bounds = [0, ...cuts, max];
+    const segs = bounds.slice(1).map((b, i) => `<i class="g${i + 1}b" style="flex:${b - bounds[i]}"></i>`).join("");
+    const ticks = bounds.slice(0, -1).map((b) => `<span style="left:${(b / max) * 100}%">${b}</span>`).join("");
+    const pos = v == null ? null : Math.min(Math.max(v, 0), max) / max * 100;
+    return `<div class="scale"><div class="segs">${segs}</div><div class="ticks">${ticks}</div>${pos == null ? "" : `<div class="pin" style="left:${pos}%"></div>`}</div>`;
+  }
+
+  function readingHTML(label, sub, v, cuts, max) {
+    const g = grade(v, cuts);
+    const val = v == null ? "–" : Math.round(v);
+    return `<div class="reading-head">
+        <div class="label">${label}<span>${sub}</span></div>
+        <div class="right"><span class="gname g${g}b">${NAMES[g]}</span><span class="val">${val}<small>㎍/㎥</small></span></div>
+      </div>${scaleHTML(v, cuts, max)}`;
+  }
+
+  function render({ place, data }) {
+    const c = data.current || {};
+    const g10 = grade(c.pm10, STD.pm10), g25 = grade(c.pm2_5, STD.pm25);
+    const g = Math.max(g10, g25);
+    const band = $("band");
+    band.classList.remove("skeleton");
+    band.dataset.grade = String(g);
+    $("placeName").textContent = place;
+    $("updated").textContent = c.time ? c.time.slice(11, 16) + " 기준" : "";
+    $("word").textContent = NAMES[g];
+    $("advice").textContent = ADVICE[g];
+    $("r-pm10").innerHTML = readingHTML("미세먼지", "PM10", c.pm10, STD.pm10, 200);
+    $("r-pm25").innerHTML = readingHTML("초미세먼지", "PM2.5", c.pm2_5, STD.pm25, 100);
+
+    const o3 = o3ppm(c.ozone), no2 = no2ppm(c.nitrogen_dioxide);
+    const go3 = grade(o3, STD.o3), gno2 = grade(no2, STD.no2);
+    $("minor").innerHTML =
+      `<div><dt>오존</dt><dd>${o3 == null ? "–" : o3.toFixed(3)} ppm<b class="g${go3}c">${NAMES[go3]}</b></dd></div>` +
+      `<div><dt>이산화질소</dt><dd>${no2 == null ? "–" : no2.toFixed(3)} ppm<b class="g${gno2}c">${NAMES[gno2]}</b></dd></div>`;
+
+    renderHours(data);
+    renderDays(data);
+  }
+
+  function renderHours(data) {
+    const h = data.hourly; const box = $("hours"); box.textContent = "";
+    if (!h || !h.time) return;
+    const nowKey = (data.current?.time || "").slice(0, 13);
+    let start = h.time.findIndex((t) => t.slice(0, 13) >= nowKey);
+    if (start < 0) start = 0;
+    const end = Math.min(start + 24, h.time.length);
+    // 막대 높이는 이 24시간 중 최댓값에 맞추되, 깨끗한 날이 과장되지 않게 최소 50으로 둔다.
+    const max = Math.max(50, ...h.pm2_5.slice(start, end).filter((v) => v != null));
+    for (let i = start; i < end; i++) {
+      const p25 = h.pm2_5[i], p10 = h.pm10[i];
+      const g = Math.max(grade(p25, STD.pm25), grade(p10, STD.pm10));
+      const hr = Number(h.time[i].slice(11, 13));
+      const d = document.createElement("div"); d.className = "hour";
+      const label = i === start ? "지금" : (hr === 0 ? "0시" : hr + "시");
+      const height = p25 == null ? 4 : Math.max(4, Math.min(p25, max) / max * 72);
+      d.innerHTML = `<span class="t${i === start ? " now" : ""}">${label}</span>
+        <span class="bar g${g}b" style="height:${height}px" title="${NAMES[g]}"></span>
+        <span class="v">${p25 == null ? "–" : Math.round(p25)}</span>
+        <span class="v2">${p10 == null ? "–" : Math.round(p10)}</span>`;
+      box.append(d);
+    }
+    box.scrollLeft = 0;
+  }
+
+  function renderDays(data) {
+    const h = data.hourly; const ul = $("days"); ul.textContent = "";
+    if (!h || !h.time) return;
+    const byDay = new Map();
+    h.time.forEach((t, i) => {
+      const k = t.slice(0, 10);
+      if (!byDay.has(k)) byDay.set(k, { p10: [], p25: [] });
+      if (h.pm10[i] != null) byDay.get(k).p10.push(h.pm10[i]);
+      if (h.pm2_5[i] != null) byDay.get(k).p25.push(h.pm2_5[i]);
+    });
+    const avg = (a) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
+    const rel = ["오늘", "내일", "모레"];
+    const wd = ["일", "월", "화", "수", "목", "금", "토"];
+    [...byDay.entries()].slice(0, 5).forEach(([k, v], i) => {
+      if (v.p10.length < 12 && i > 0) return; // 하루치가 덜 찬 마지막 날은 생략
+      const a10 = avg(v.p10), a25 = avg(v.p25);
+      const g = Math.max(grade(a10, STD.pm10), grade(a25, STD.pm25));
+      const day = new Date(k + "T12:00:00+09:00").getUTCDay();
+      const md = `${Number(k.slice(5, 7))}/${Number(k.slice(8, 10))} (${wd[day]})`;
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="d">${rel[i] || wd[day] + "요일"}<small>${md}</small></span>
+        <span class="g g${g}c"><span class="dot g${g}b"></span>${NAMES[g]}</span>
+        <span class="n">초 <b>${a25 == null ? "–" : Math.round(a25)}</b></span>
+        <span class="n">미 <b>${a10 == null ? "–" : Math.round(a10)}</b></span>`;
+      ul.append(li);
+    });
+  }
+
+  function renderEmpty() {
+    $("band").dataset.grade = "0";
+    $("band").classList.remove("skeleton");
+    $("word").textContent = NAMES[0];
+    $("advice").textContent = ADVICE[0];
+    $("r-pm10").innerHTML = readingHTML("미세먼지", "PM10", null, STD.pm10, 200);
+    $("r-pm25").innerHTML = readingHTML("초미세먼지", "PM2.5", null, STD.pm25, 100);
+  }
+
+  // ---------- Boot ----------
+  $("refreshBtn").addEventListener("click", () => load(true));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) load(false); });
+
+  renderChips();
+  const cached = store.get("last:" + selected, null);
+  if (cached) render(cached);
+  load(true);
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
