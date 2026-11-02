@@ -90,6 +90,7 @@ button { cursor: pointer; }
   min-height: 32px; padding: 0 13px; border-radius: 16px;
   border: 1px solid var(--panel-line); background: var(--panel); font-size: 13px; white-space: nowrap;
 }
+.chip { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .chip[aria-pressed="true"] { background: #fff; color: var(--tone); border-color: #fff; font-weight: 600; }
 .chip .x { display: none; font-size: 15px; line-height: 1; }
 .editing .chip .x { display: inline; }
@@ -671,7 +672,12 @@ button { cursor: pointer; }
 
   // ---------- Places ----------
   let places = store.get("places", []);
-  let selected = store.get("selected", "here");
+  // 기본 위치: 마지막으로 검색해 추가한 장소. 앱을 열면 이 장소부터 보여준다.
+  let defaultPlace = store.get("defaultPlace", places.length ? String(places.length - 1) : null);
+  if (defaultPlace !== null && !places[Number(defaultPlace)]) defaultPlace = null;
+  let selected = defaultPlace ?? "here";
+  store.set("selected", selected);
+  let msgTimer;
   let here = store.get("here", null);
   let lastLoad = 0;
   let editing = false;
@@ -684,16 +690,25 @@ button { cursor: pointer; }
       const b = document.createElement("button");
       b.type = "button"; b.className = "chip";
       b.setAttribute("aria-pressed", String(selected === key));
-      const s = document.createElement("span"); s.textContent = label; b.append(s);
+      const s = document.createElement("span"); s.textContent = (key === defaultPlace ? "★ " : "") + label; b.append(s);
       if (removable) { const x = document.createElement("span"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-hidden", "true"); b.append(x); }
+      // 꾹 누르면 기본 위치로 지정
+      let hold, held = false;
+      if (removable) {
+        b.addEventListener("pointerdown", () => { held = false; hold = setTimeout(() => { held = true; setDefault(key); }, 550); });
+        ["pointerup", "pointerleave", "pointercancel"].forEach((t) => b.addEventListener(t, () => clearTimeout(hold)));
+        b.addEventListener("contextmenu", (e) => e.preventDefault());
+      }
       b.addEventListener("click", () => {
+        if (held) { held = false; return; }
         if (editing && removable) { removePlace(Number(key)); return; }
         selected = key; store.set("selected", selected); renderChips(); load(true);
       });
       return b;
     };
+    if (defaultPlace !== null) box.append(mk(places[Number(defaultPlace)].name, defaultPlace, true));
     box.append(mk("📍 현재 위치", "here", false));
-    places.forEach((p, i) => box.append(mk(p.name, String(i), true)));
+    places.forEach((p, i) => { if (String(i) !== defaultPlace) box.append(mk(p.name, String(i), true)); });
     const add = document.createElement("button");
     add.type = "button"; add.className = "chip"; add.textContent = "+ 장소 추가";
     add.addEventListener("click", () => {
@@ -703,9 +718,19 @@ button { cursor: pointer; }
     box.append(add);
   }
 
+  function setDefault(key) {
+    defaultPlace = key;
+    store.set("defaultPlace", defaultPlace);
+    renderChips();
+    flashMsg(`앱을 열면 ‘${places[Number(key)].name}’부터 보여드려요.`);
+  }
+
   function removePlace(i) {
     places.splice(i, 1);
     store.set("places", places);
+    if (defaultPlace === String(i)) defaultPlace = places.length ? String(places.length - 1) : null;
+    else if (defaultPlace !== null && Number(defaultPlace) > i) defaultPlace = String(Number(defaultPlace) - 1);
+    store.set("defaultPlace", defaultPlace);
     if (selected === String(i)) selected = "here";
     else if (selected !== "here" && Number(selected) > i) selected = String(Number(selected) - 1);
     store.set("selected", selected);
@@ -754,6 +779,7 @@ button { cursor: pointer; }
           places.push({ name: r.name, lat: r.latitude, lon: r.longitude });
           store.set("places", places);
           selected = String(places.length - 1); store.set("selected", selected);
+          defaultPlace = selected; store.set("defaultPlace", defaultPlace);
           $("searchInput").value = ""; ul.textContent = ""; $("searchBox").hidden = true;
           renderChips(); load(true);
         });
@@ -797,13 +823,19 @@ button { cursor: pointer; }
       return here;
     } catch {
       if (here) { showMsg("위치를 새로 확인하지 못해 마지막으로 확인한 위치를 보여드려요."); return here; }
+      if (defaultPlace !== null) {
+        selected = defaultPlace; store.set("selected", selected); renderChips();
+        showMsg("현재 위치를 확인하지 못해 기본 위치를 보여드려요.");
+        return places[Number(defaultPlace)];
+      }
       showMsg("위치 권한이 없어 서울 기준으로 보여드려요. 설정에서 위치를 허용하거나 ‘+ 장소 추가’로 동네를 등록하세요.");
       return { name: "서울 (기본값)", lat: 37.5665, lon: 126.978 };
     }
   }
 
-  function showMsg(t) { const m = $("msg"); m.textContent = t; m.hidden = false; }
+  function showMsg(t) { clearTimeout(msgTimer); const m = $("msg"); m.textContent = t; m.hidden = false; }
   function hideMsg() { $("msg").hidden = true; }
+  function flashMsg(t) { showMsg(t); msgTimer = setTimeout(hideMsg, 2800); }
 
   // ---------- Data ----------
   async function fetchAir(lat, lon) {
