@@ -23,3 +23,14 @@ Capacitor로 APK를 빌드해 `app-latest` 릴리스에 `oneulmeonji.apk`로 올
 - 서명: `android-keystore/debug.keystore`(공개된 디버그 키). 매 빌드가 같은 키로 서명되어 덮어 설치가 된다.
   개인용 설치 파일이므로 Play 스토어 배포용으로 쓰지 않는다.
 - 로컬 빌드: `npm install && sh scripts/build-www.sh && npx cap add android` 후 Android Studio에서 연다.
+
+## 에어코리아 실측값
+
+기본값은 Open-Meteo 예측 모델 추정치라 측정소 값(네이버 등)과 다를 수 있다. 앱 아래쪽 "에어코리아 실측값" 칸에
+공공데이터포털 인증키를 넣으면 가장 가까운 측정소의 실측값(미세·초미세·오존·이산화질소)을 현재값으로 쓴다.
+
+1. data.go.kr 가입
+2. "한국환경공단_에어코리아_대기오염정보", "한국환경공단_에어코리아_측정소정보" 두 API 각각 활용신청 (자동승인)
+3. 마이페이지에서 일반 인증키(Decoding)를 복사해 앱에 붙여넣기
+
+안드로이드 앱은 CapacitorHttp로 요청해 CORS 제한이 없다. 웹 버전은 브라우저 CORS 정책 때문에 막힐 수 있다.
