@@ -101,6 +101,10 @@ button { cursor: pointer; }
   border: 0; background: #fff; color: #1d2430;
 }
 .search input::placeholder { color: #7a8494; }
+.search-row { display: flex; gap: 8px; margin: 0; }
+.search-row input { flex: 1; min-width: 0; }
+.search-go { flex: none; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: #1d2430; color: #fff; font-weight: 600; }
+.search-go:disabled { opacity: .6; }
 .results { list-style: none; margin: 0; padding: 0; border-radius: 12px; overflow: hidden; background: #fff; color: #1d2430; }
 .results:empty { display: none; }
 .results button { display: block; width: 100%; text-align: left; padding: 11px 14px; background: none; border: 0; border-top: 1px solid #e3e7ec; color: inherit; }
@@ -254,7 +258,10 @@ button { cursor: pointer; }
     </div>
   </div>
   <div class="search" id="searchBox" hidden>
-    <input id="searchInput" type="search" placeholder="동네 이름 검색 (예: 수원, 해운대, 강남)" autocomplete="off" enterkeyhint="search">
+    <form class="search-row" id="searchForm" role="search">
+      <input id="searchInput" type="search" placeholder="동네 이름 (예: 역삼동, 해운대구, 수원)" autocomplete="off" enterkeyhint="search">
+      <button class="search-go" id="searchGo" type="submit">검색</button>
+    </form>
     <ul class="results" id="results"></ul>
   </div>
 </header>
@@ -298,7 +305,7 @@ button { cursor: pointer; }
   <p class="note">
     데이터: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo 대기질 API</a>
     (유럽 코페르니쿠스 CAMS 예측 모델). 측정소 실측값이 아니라 모델 추정값이라 에어코리아 측정값과 차이가 날 수 있어요.
-    위치 이름은 BigDataCloud에서 가져와요. 광고와 추적 코드는 없어요.
+    위치 이름은 BigDataCloud, 장소 검색은 OpenStreetMap(© OpenStreetMap 기여자)을 써요. 광고와 추적 코드는 없어요.
   </p>
 </main>
 
@@ -306,6 +313,7 @@ button { cursor: pointer; }
 (() => {
   const AIR = "https://air-quality-api.open-meteo.com/v1/air-quality";
   const GEO = "https://geocoding-api.open-meteo.com/v1/search";
+  const OSM = "https://nominatim.openstreetmap.org/search";
   const REV = "https://api.bigdatacloud.net/data/reverse-geocode-client";
   const STALE_MS = 10 * 60 * 1000;
 
@@ -746,12 +754,13 @@ button { cursor: pointer; }
     renderChips();
   });
 
-  let searchTimer;
-  $("searchInput").addEventListener("input", (e) => {
-    clearTimeout(searchTimer);
-    const q = e.target.value.trim();
-    if (q.length < 2) { $("results").textContent = ""; return; }
-    searchTimer = setTimeout(() => search(q), 300);
+  // OpenStreetMap 이용 규칙상 글자마다 검색하지 않고, 검색 버튼이나 키보드 검색 키를 누를 때 찾는다
+  $("searchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = $("searchInput").value.trim();
+    if (!q) return;
+    $("searchInput").blur();
+    search(q);
   });
 
   function resultNote(ul, text) {
@@ -760,34 +769,62 @@ button { cursor: pointer; }
     li.append(b); ul.append(li);
   }
 
+  // 한국 동네 이름은 OpenStreetMap이 잘 찾는다. 결과가 없거나 실패하면 Open-Meteo로 한 번 더 찾는다.
+  async function searchOSM(q) {
+    const url = `${OSM}?q=${encodeURIComponent(q)}&format=jsonv2&countrycodes=kr&accept-language=ko&addressdetails=1&limit=8`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("osm " + res.status);
+    const list = await res.json();
+    const seen = new Set();
+    return list.map((r) => {
+      const a = r.address || {};
+      const name = r.name || q;
+      const area = [a.province || a.state, a.city || a.county, a.borough || a.city_district, a.suburb || a.quarter]
+        .filter((v, i, arr) => v && v !== name && arr.indexOf(v) === i).join(" ");
+      return { name, area, lat: Number(r.lat), lon: Number(r.lon) };
+    }).filter((r) => {
+      const k = r.name + "|" + r.area;
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+  }
+  async function searchMeteo(q) {
+    const url = `${GEO}?name=${encodeURIComponent(q)}&count=8&language=ko&format=json&countryCode=KR`;
+    const data = await (await fetch(url)).json();
+    return (data.results || []).map((r) => ({ name: r.name, area: [r.admin1, r.admin2].filter(Boolean).join(" "), lat: r.latitude, lon: r.longitude }));
+  }
+
   async function search(q) {
     const ul = $("results");
-    try {
-      const url = `${GEO}?name=${encodeURIComponent(q)}&count=8&language=ko&format=json&countryCode=KR`;
-      const data = await (await fetch(url)).json();
-      ul.textContent = "";
-      const list = data.results || [];
-      if (!list.length) return resultNote(ul, "검색 결과가 없어요. 시·군·구 이름으로 다시 찾아보세요.");
-      for (const r of list) {
-        const li = document.createElement("li");
-        const b = document.createElement("button"); b.type = "button";
-        b.textContent = r.name;
-        const sm = document.createElement("small");
-        sm.textContent = [r.admin1, r.admin2].filter(Boolean).join(" ");
-        b.append(sm);
-        b.addEventListener("click", () => {
-          places.push({ name: r.name, lat: r.latitude, lon: r.longitude });
-          store.set("places", places);
-          selected = String(places.length - 1); store.set("selected", selected);
-          defaultPlace = selected; store.set("defaultPlace", defaultPlace);
-          $("searchInput").value = ""; ul.textContent = ""; $("searchBox").hidden = true;
-          renderChips(); load(true);
-        });
-        li.append(b); ul.append(li);
-      }
-    } catch {
-      ul.textContent = "";
-      resultNote(ul, "검색하지 못했어요. 인터넷 연결을 확인해 주세요.");
+    ul.textContent = "";
+    resultNote(ul, "찾는 중…");
+    $("searchGo").disabled = true;
+    let list = [], failed = 0;
+    try { list = await searchOSM(q); } catch { failed++; }
+    if (!list.length) { try { list = await searchMeteo(q); } catch { failed++; } }
+    $("searchGo").disabled = false;
+    ul.textContent = "";
+    if (!list.length) {
+      return resultNote(ul, failed === 2
+        ? "검색하지 못했어요. 인터넷 연결을 확인해 주세요."
+        : "검색 결과가 없어요. ‘역삼동’, ‘해운대구’처럼 동이나 구 이름으로 찾아보세요.");
+    }
+    for (const r of list) {
+      const li = document.createElement("li");
+      const b = document.createElement("button"); b.type = "button";
+      b.textContent = r.name;
+      const sm = document.createElement("small");
+      sm.textContent = r.area;
+      b.append(sm);
+      b.addEventListener("click", () => {
+        places.push({ name: r.name, lat: r.lat, lon: r.lon });
+        store.set("places", places);
+        selected = String(places.length - 1); store.set("selected", selected);
+        defaultPlace = selected; store.set("defaultPlace", defaultPlace);
+        $("searchInput").value = ""; ul.textContent = ""; $("searchBox").hidden = true;
+        renderChips(); load(true);
+      });
+      li.append(b); ul.append(li);
     }
   }
 
