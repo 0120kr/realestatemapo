@@ -1,16 +1,15 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-grade="0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>오늘먼지</title>
 <meta name="description" content="광고 없는 미세먼지·초미세먼지 확인 앱">
-<meta name="theme-color" content="#eef3f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#11161b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#7b8794" id="themeColor">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="오늘먼지">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -18,192 +17,199 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: one grade-tinted band holds the verdict and both readings on the 환경부 scale; forecasts and places sit below on the plain ground. */
+/* Layout: the whole screen takes the color of the current grade; the mascot and verdict sit in the middle, readings and forecasts follow on translucent panels. */
 :root {
-  --bg: #eef3f7;
-  --surface: #ffffff;
-  --fg: #16202a;
-  --muted: #5d6b78;
-  --line: #d5dee6;
-  --accent: #2c5d86;
-  --g1: #1f6fd1; --g1-soft: #dcebfb;
-  --g2: #1e9a5b; --g2-soft: #dcf3e6;
-  --g3: #d9770b; --g3-soft: #fdeccf;
-  --g4: #d23a3a; --g4-soft: #fadede;
-  --g0: #7c8995; --g0-soft: #e3e9ee;
+  /* 8단계 색: 최고 → 최악 */
+  --c0: #7b8794;
+  --c1: #1c6ee0; --c2: #2b97ea; --c3: #17a3a0; --c4: #36a65e;
+  --c5: #e39a0b; --c6: #e8701c; --c7: #d93c34; --c8: #34343f;
+  --tone: var(--c0);
+  --ink: #ffffff;
+  --ink-soft: rgba(255, 255, 255, .78);
+  --panel: rgba(255, 255, 255, .15);
+  --panel-line: rgba(255, 255, 255, .22);
+  --face-ink: #283041;
   --font-display: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #11161b; --surface: #1a2128; --fg: #e6edf3; --muted: #93a1ad; --line: #2b353f; --accent: #8cb9e0;
-    --g1: #6aaaf5; --g1-soft: #13283f;
-    --g2: #5ccf92; --g2-soft: #12301f;
-    --g3: #f3a94a; --g3-soft: #3a2810;
-    --g4: #f47878; --g4-soft: #3d1717;
-    --g0: #93a1ad; --g0-soft: #222b33;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #11161b; --surface: #1a2128; --fg: #e6edf3; --muted: #93a1ad; --line: #2b353f; --accent: #8cb9e0;
-  --g1: #6aaaf5; --g1-soft: #13283f;
-  --g2: #5ccf92; --g2-soft: #12301f;
-  --g3: #f3a94a; --g3-soft: #3a2810;
-  --g4: #f47878; --g4-soft: #3d1717;
-  --g0: #93a1ad; --g0-soft: #222b33;
   color-scheme: dark;
 }
+html[data-grade="1"] { --tone: var(--c1); }
+html[data-grade="2"] { --tone: var(--c2); }
+html[data-grade="3"] { --tone: var(--c3); }
+html[data-grade="4"] { --tone: var(--c4); }
+html[data-grade="5"] { --tone: var(--c5); }
+html[data-grade="6"] { --tone: var(--c6); }
+html[data-grade="7"] { --tone: var(--c7); }
+html[data-grade="8"] { --tone: var(--c8); }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; }
-:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; min-height: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--tone); transition: background-color .5s ease; }
 body {
-  background: var(--bg); color: var(--fg);
+  background: linear-gradient(180deg, var(--tone) 0%, color-mix(in srgb, var(--tone) 82%, #000) 100%);
+  background-color: var(--tone);
+  color: var(--ink);
   font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  word-break: keep-all; overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
+  transition: background-color .5s ease;
 }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 [hidden] { display: none !important; }
 
 .wrap {
-  max-width: 560px; margin: 0 auto;
+  max-width: 520px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
-/* Places bar */
-.top { display: flex; flex-direction: column; gap: 10px; padding-block: 14px 10px; }
-.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; }
+/* Top bar */
+.top { display: flex; flex-direction: column; gap: 10px; padding-block: 12px 4px; }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.where { min-width: 0; display: flex; flex-direction: column; }
+.where strong { font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.where time { font-size: 12px; color: var(--ink-soft); font-family: var(--font-data); }
+.tools { display: flex; gap: 8px; flex: none; }
 .icon-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 36px; padding: 0 12px; border-radius: 18px;
-  border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 20px;
+  border: 1px solid var(--panel-line); background: var(--panel);
 }
-.icon-btn svg { width: 16px; height: 16px; }
-.icon-btn.spinning svg { animation: spin 1s linear infinite; }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn[aria-pressed="true"] { background: #fff; color: var(--tone); }
+.spinning svg { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chip {
   flex: none; display: inline-flex; align-items: center; gap: 6px;
-  min-height: 34px; padding: 0 14px; border-radius: 17px;
-  border: 1px solid var(--line); background: var(--surface); font-size: 14px; white-space: nowrap;
+  min-height: 32px; padding: 0 13px; border-radius: 16px;
+  border: 1px solid var(--panel-line); background: var(--panel); font-size: 13px; white-space: nowrap;
 }
-.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-.chip .x { display: none; font-size: 16px; line-height: 1; opacity: .7; }
+.chip[aria-pressed="true"] { background: #fff; color: var(--tone); border-color: #fff; font-weight: 600; }
+.chip .x { display: none; font-size: 15px; line-height: 1; }
 .editing .chip .x { display: inline; }
-.chip.add { color: var(--muted); }
 
-/* Search sheet */
-.search { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
+.search { display: flex; flex-direction: column; gap: 8px; }
 .search input {
   width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px;
-  border: 1px solid var(--line); background: var(--surface);
+  border: 0; background: #fff; color: #1d2430;
 }
-.results { list-style: none; margin: 0; padding: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.search input::placeholder { color: #7a8494; }
+.results { list-style: none; margin: 0; padding: 0; border-radius: 12px; overflow: hidden; background: #fff; color: #1d2430; }
 .results:empty { display: none; }
-.results button { display: block; width: 100%; text-align: left; padding: 11px 14px; background: none; border: 0; border-top: 1px solid var(--line); }
+.results button { display: block; width: 100%; text-align: left; padding: 11px 14px; background: none; border: 0; border-top: 1px solid #e3e7ec; color: inherit; }
 .results li:first-child button { border-top: 0; }
-.results small { color: var(--muted); margin-left: 6px; }
+.results small { color: #6a7484; margin-left: 6px; }
 
-/* Verdict band */
-.band { background: var(--tone-soft); transition: background .4s ease; }
-.band[data-grade="1"] { --tone: var(--g1); --tone-soft: var(--g1-soft); }
-.band[data-grade="2"] { --tone: var(--g2); --tone-soft: var(--g2-soft); }
-.band[data-grade="3"] { --tone: var(--g3); --tone-soft: var(--g3-soft); }
-.band[data-grade="4"] { --tone: var(--g4); --tone-soft: var(--g4-soft); }
-.band, .band[data-grade="0"] { --tone: var(--g0); --tone-soft: var(--g0-soft); }
-.band .wrap { padding-block: 22px 26px; display: flex; flex-direction: column; gap: 22px; }
-.where { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--muted); }
-.where strong { color: var(--fg); font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.where time { flex: none; font-family: var(--font-data); font-size: 12px; }
-.verdict { display: flex; flex-direction: column; gap: 6px; }
-.verdict .word { font-family: var(--font-display); font-size: clamp(64px, 22vw, 104px); line-height: .95; color: var(--tone); letter-spacing: -.01em; }
-.verdict .advice { font-size: 15px; max-width: 32ch; text-wrap: pretty; }
+/* Hero */
+.hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding-block: 8px 22px; position: relative; }
+.stage { position: relative; width: 210px; height: 210px; }
+.mascot {
+  width: 100%; height: 100%; padding: 0; border: 0; background: none; display: block;
+  animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 90%;
+}
+.mascot svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.mascot.squish { animation: squish .42s ease; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes squish {
+  0% { transform: scale(1, 1); }
+  30% { transform: scale(1.12, .86); }
+  60% { transform: scale(.94, 1.08); }
+  100% { transform: scale(1, 1); }
+}
+.pop {
+  position: absolute; left: 50%; top: 42%; font-size: 40px; line-height: 1;
+  pointer-events: none; user-select: none;
+  animation: pop 1.6s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+@keyframes pop {
+  0% { transform: translate(-50%, 0) scale(.3) rotate(0); opacity: 0; }
+  15% { opacity: 1; transform: translate(calc(-50% + var(--dx) * .3), -40px) scale(1.15) rotate(calc(var(--rot) * .3)); }
+  100% { transform: translate(calc(-50% + var(--dx)), -170px) scale(.9) rotate(var(--rot)); opacity: 0; }
+}
+.tap-hint { font-size: 12px; color: var(--ink-soft); }
+.word { font-family: var(--font-display); font-size: 52px; line-height: 1.05; letter-spacing: .01em; margin-top: 4px; text-shadow: 0 2px 12px rgba(0,0,0,.12); }
+.advice { font-size: 15px; max-width: 30ch; text-wrap: balance; }
 
-.readings { display: grid; gap: 18px; }
-.reading { display: grid; gap: 8px; }
-.reading-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.reading-head .label { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
-.reading-head .label span { color: var(--muted); font-weight: 400; margin-left: 4px; letter-spacing: 0; }
-.reading-head .val { font-family: var(--font-data); font-size: 26px; font-variant-numeric: tabular-nums; }
-.reading-head .val small { font-size: 12px; color: var(--muted); margin-left: 3px; }
-.reading-head .gname { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 6px; color: var(--surface); }
-.reading-head .right { display: flex; align-items: baseline; gap: 10px; }
-.scale { position: relative; height: 26px; }
-.scale .segs { position: absolute; left: 0; right: 0; top: 4px; height: 8px; display: flex; gap: 2px; }
-.scale .segs i { display: block; height: 100%; border-radius: 2px; opacity: .85; }
-.scale .ticks { position: absolute; left: 0; right: 0; top: 14px; height: 12px; font-family: var(--font-data); font-size: 10px; color: var(--muted); }
-.scale .ticks span { position: absolute; transform: translateX(-50%); }
-.scale .ticks span:first-child { transform: none; }
-.scale .pin { position: absolute; top: 0; width: 4px; height: 16px; margin-left: -2px; border-radius: 2px; background: var(--fg); box-shadow: 0 0 0 2px var(--tone-soft); transition: left .5s ease; }
+/* Panels */
+.panels { display: flex; flex-direction: column; gap: 12px; padding-block: 0 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 18px; padding: 14px 16px; }
+.panel h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .04em; display: flex; justify-content: space-between; gap: 10px; }
+.panel h2 span { font-weight: 400; color: var(--ink-soft); letter-spacing: 0; }
 
-.minor { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.minor div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 70%, transparent); }
-.minor dt { font-size: 12px; color: var(--muted); }
-.minor dd { margin: 0; font-family: var(--font-data); font-size: 15px; font-variant-numeric: tabular-nums; }
-.minor dd b { font-family: var(--font-body); font-size: 12px; font-weight: 600; margin-left: 6px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pm { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border-radius: 18px; background: var(--panel); border: 1px solid var(--panel-line); text-align: center; }
+.pm .lbl { font-size: 13px; font-weight: 600; }
+.pm .lbl span { font-weight: 400; color: var(--ink-soft); margin-left: 3px; }
+.pm .face { width: 56px; height: 56px; }
+.pm .gname { font-family: var(--font-display); font-size: 22px; line-height: 1.1; }
+.pm .val { font-family: var(--font-data); font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 
-/* Sections */
-main .wrap { padding-block: 22px 28px; display: flex; flex-direction: column; gap: 28px; }
-section h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
-section h2 span { font-weight: 400; letter-spacing: 0; }
+.gases { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gas { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.gas dt { font-size: 13px; color: var(--ink-soft); }
+.gas dd { margin: 0; font-family: var(--font-data); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; }
+.gas dd b { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 600; }
 
-.hours { display: flex; gap: 2px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
-.hour { flex: none; width: 46px; display: grid; grid-template-rows: auto 72px auto auto; justify-items: center; gap: 4px; scroll-snap-align: start; }
-.hour .t { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.hour .t.now { color: var(--fg); font-weight: 600; }
-.hour .bar { width: 14px; align-self: end; border-radius: 4px 4px 2px 2px; min-height: 4px; }
-.hour .v { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
-.hour .v2 { font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.hours { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -6px; padding: 0 6px; }
+.hours::-webkit-scrollbar { display: none; }
+.hour { flex: none; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.hour .t { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.hour .t.now { color: var(--ink); font-weight: 600; }
+.hour .face { width: 34px; height: 34px; }
+.hour .g { font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.hour .v { font-family: var(--font-data); font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
-.days { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
-.days li { display: grid; grid-template-columns: 4.2em 1fr auto auto; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
-.days li:first-child { border-top: 0; }
+.days { list-style: none; margin: 0; padding: 0; }
+.days li { display: grid; grid-template-columns: 4.4em 34px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--panel-line); }
+.days li:first-child { border-top: 0; padding-top: 0; }
 .days .d { font-weight: 600; }
-.days .d small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.days .d small { display: block; font-weight: 400; font-size: 12px; color: var(--ink-soft); }
+.days .face { width: 34px; height: 34px; }
 .days .g { font-weight: 600; }
-.days .n { font-family: var(--font-data); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
-.days .n b { color: var(--fg); font-weight: 500; }
-.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; vertical-align: 1px; }
+.days .n { font-family: var(--font-data); font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; text-align: right; line-height: 1.5; }
+.days .n b { color: var(--ink); font-weight: 500; }
 
-.std { width: 100%; border-collapse: collapse; font-size: 13px; }
-.std th, .std td { padding: 7px 6px; text-align: center; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.std-wrap { overflow-x: auto; margin: 0 -4px; }
+.std { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.std th, .std td { padding: 6px 5px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .std th { font-weight: 600; }
+.std th i { display: block; width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 50%; border: 2px solid rgba(255,255,255,.85); }
 .std td:first-child, .std th:first-child { text-align: left; }
-.std-wrap { overflow-x: auto; }
+.std tbody tr { border-top: 1px solid var(--panel-line); }
 
-.note { font-size: 12px; color: var(--muted); line-height: 1.6; }
-.note a { color: var(--accent); }
-.msg { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.note { font-size: 12px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
+.note a { color: var(--ink); }
+.msg { padding: 11px 14px; border-radius: 14px; background: rgba(0,0,0,.18); font-size: 13px; }
 
-.g1c { color: var(--g1); } .g2c { color: var(--g2); } .g3c { color: var(--g3); } .g4c { color: var(--g4); } .g0c { color: var(--g0); }
-.g1b { background: var(--g1); } .g2b { background: var(--g2); } .g3b { background: var(--g3); } .g4b { background: var(--g4); } .g0b { background: var(--g0); }
-
-.skeleton .word, .skeleton .val { opacity: .35; }
+.skeleton .word, .skeleton .pm .gname { opacity: .4; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .mascot, .mascot.squish { animation: none; }
+  .pop { animation-duration: .01s; }
+  * { transition: none !important; }
 }
 </style>
 </head>
-<body>
+<body class="skeleton">
 
 <header class="wrap top">
   <div class="top-row">
-    <div class="brand">오늘먼지</div>
-    <div style="display:flex;gap:8px">
-      <button class="icon-btn" id="editBtn" type="button" aria-pressed="false">편집</button>
+    <div class="where">
+      <strong id="placeName">위치 확인 중</strong>
+      <time id="updated">불러오는 중</time>
+    </div>
+    <div class="tools">
+      <button class="icon-btn" id="editBtn" type="button" aria-pressed="false" aria-label="장소 편집">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
       <button class="icon-btn" id="refreshBtn" type="button" aria-label="새로고침">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
-        새로고침
       </button>
     </div>
   </div>
@@ -214,55 +220,47 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
   </div>
 </header>
 
-<div class="band skeleton" id="band" data-grade="0">
-  <div class="wrap">
-    <div class="where"><strong id="placeName">위치 확인 중</strong><time id="updated">--:--</time></div>
-    <div class="verdict">
-      <div class="word" id="word">····</div>
-      <div class="advice" id="advice">대기질 정보를 불러오고 있어요.</div>
-    </div>
-    <div class="readings">
-      <div class="reading" id="r-pm10"></div>
-      <div class="reading" id="r-pm25"></div>
-    </div>
-    <dl class="minor" id="minor"></dl>
+<section class="wrap hero" aria-live="polite">
+  <div class="stage" id="stage">
+    <button class="mascot" id="mascot" type="button" aria-label="마스코트 누르기"></button>
   </div>
-</div>
+  <div class="word" id="word">····</div>
+  <div class="advice" id="advice">대기질 정보를 불러오고 있어요.</div>
+</section>
 
-<main>
-  <div class="wrap">
-    <div class="msg" id="msg" hidden></div>
+<main class="wrap panels">
+  <div class="msg" id="msg" hidden></div>
 
-    <section>
-      <h2>시간별 예보 <span>막대: 초미세먼지</span></h2>
-      <div class="hours" id="hours"></div>
-      <div class="legend"><span>위 숫자 초미세먼지</span><span>아래 숫자 미세먼지 (㎍/㎥)</span></div>
-    </section>
-
-    <section>
-      <h2>일별 예보 <span>하루 평균 기준</span></h2>
-      <ul class="days" id="days"></ul>
-    </section>
-
-    <section>
-      <h2>등급 기준 <span>환경부, ㎍/㎥</span></h2>
-      <div class="std-wrap">
-        <table class="std">
-          <thead><tr><th></th><th class="g1c">좋음</th><th class="g2c">보통</th><th class="g3c">나쁨</th><th class="g4c">매우나쁨</th></tr></thead>
-          <tbody>
-            <tr><td>미세먼지 PM10</td><td>0–30</td><td>31–80</td><td>81–150</td><td>151+</td></tr>
-            <tr><td>초미세먼지 PM2.5</td><td>0–15</td><td>16–35</td><td>36–75</td><td>76+</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <p class="note">
-      데이터: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo 대기질 API</a>
-      (유럽 코페르니쿠스 CAMS 예측 모델). 측정소 실측값이 아니라 약 수십 km 격자의 모델 추정값이라
-      에어코리아 측정값과 차이가 날 수 있어요. 위치 이름은 BigDataCloud에서 가져와요. 광고와 추적 코드는 없어요.
-    </p>
+  <div class="pair">
+    <div class="pm" id="pm10"></div>
+    <div class="pm" id="pm25"></div>
   </div>
+
+  <div class="panel">
+    <h2>기타 오염물질 <span>환경부 4단계 기준</span></h2>
+    <dl class="gases" id="gases"></dl>
+  </div>
+
+  <div class="panel">
+    <h2>시간별 예보 <span>미세·초미세 중 나쁜 쪽</span></h2>
+    <div class="hours" id="hours"></div>
+  </div>
+
+  <div class="panel">
+    <h2>일별 예보 <span>하루 평균</span></h2>
+    <ul class="days" id="days"></ul>
+  </div>
+
+  <div class="panel">
+    <h2>8단계 기준 <span>WHO 권고 기반, ㎍/㎥</span></h2>
+    <div class="std-wrap"><table class="std" id="std"></table></div>
+  </div>
+
+  <p class="note">
+    데이터: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo 대기질 API</a>
+    (유럽 코페르니쿠스 CAMS 예측 모델). 측정소 실측값이 아니라 모델 추정값이라 에어코리아 측정값과 차이가 날 수 있어요.
+    위치 이름은 BigDataCloud에서 가져와요. 광고와 추적 코드는 없어요.
+  </p>
 </main>
 
 <script>
@@ -272,21 +270,28 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
   const REV = "https://api.bigdatacloud.net/data/reverse-geocode-client";
   const STALE_MS = 10 * 60 * 1000;
 
-  // 환경부 등급 기준 (상한값 포함)
-  const STD = {
-    pm10: [30, 80, 150],
-    pm25: [15, 35, 75],
-    o3:   [0.030, 0.090, 0.150],  // ppm
-    no2:  [0.030, 0.060, 0.200],  // ppm
+  // WHO 권고 기반 8단계 (각 단계의 상한값, 마지막 단계는 그 이상)
+  const STD8 = {
+    pm10: [15, 30, 40, 50, 75, 100, 150],
+    pm25: [8, 15, 20, 25, 37, 50, 75],
   };
-  const NAMES = ["정보없음", "좋음", "보통", "나쁨", "매우나쁨"];
+  // 환경부 4단계 (ppm)
+  const STD4 = { o3: [0.030, 0.090, 0.150], no2: [0.030, 0.060, 0.200] };
+  const NAMES = ["정보없음", "최고", "좋음", "양호", "보통", "나쁨", "상당히 나쁨", "매우 나쁨", "최악"];
+  const NAMES4 = ["정보없음", "좋음", "보통", "나쁨", "매우나쁨"];
   const ADVICE = [
     "대기질 정보를 불러오지 못했어요.",
-    "공기가 깨끗해요. 환기하고 바깥 활동하기 좋은 날이에요.",
-    "무난한 날이에요. 민감한 분은 오래 밖에 있을 때만 조심하세요.",
-    "외출할 때 마스크(KF80 이상)를 챙기세요. 격한 운동은 실내에서 하세요.",
-    "가능하면 외출을 줄이고 창문을 닫아 두세요. 나갈 땐 KF94 마스크를 쓰세요.",
+    "공기가 아주 맑아요! 창문 활짝 열고 밖으로 나가요.",
+    "공기 좋은 날이에요. 산책하기 딱 좋아요.",
+    "괜찮은 공기예요. 바깥 활동해도 좋아요.",
+    "무난해요. 민감한 분은 오래 밖에 있을 땐 조심하세요.",
+    "공기가 탁해요. 외출할 땐 마스크를 챙기세요.",
+    "꽤 나빠요. 마스크 꼭 쓰고, 오래 밖에 있지 마세요.",
+    "많이 나빠요. 외출을 줄이고 창문을 닫아 두세요.",
+    "최악이에요! 되도록 실내에 머물고 KF94 마스크를 쓰세요.",
   ];
+  const COLORS = ["#7b8794", "#1c6ee0", "#2b97ea", "#17a3a0", "#36a65e", "#e39a0b", "#e8701c", "#d93c34", "#34343f"];
+  const POPS = ["🥕", "🐦", "🍎", "🌸", "🍀", "🦋", "🍓", "⭐", "🎈", "🍊", "🐝", "🌈", "🍇", "🐤", "🌻", "🍉", "🐞", "🍒", "🌷", "🐣", "🍑", "☁️", "🐿️", "🍄"];
 
   const $ = (id) => document.getElementById(id);
   const store = {
@@ -294,25 +299,143 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
   };
 
-  const grade = (v, cuts) => {
+  const grade8 = (v, cuts) => {
     if (v == null || Number.isNaN(v)) return 0;
-    const r = Math.round(cuts[0] < 1 ? v * 1000 : v) / (cuts[0] < 1 ? 1000 : 1);
-    if (r <= cuts[0]) return 1;
-    if (r <= cuts[1]) return 2;
-    if (r <= cuts[2]) return 3;
-    return 4;
+    const r = Math.round(v);
+    const i = cuts.findIndex((c) => r <= c);
+    return i < 0 ? 8 : i + 1;
   };
+  const grade4 = (v, cuts) => {
+    if (v == null || Number.isNaN(v)) return 0;
+    const r = Math.round(v * 1000) / 1000;
+    const i = cuts.findIndex((c) => r <= c);
+    return i < 0 ? 4 : i + 1;
+  };
+  const worst = (p10, p25) => Math.max(grade8(p10, STD8.pm10), grade8(p25, STD8.pm25));
   // ㎍/㎥ → ppm (25℃, 1기압)
   const o3ppm = (ug) => ug == null ? null : ug / 1963;
   const no2ppm = (ug) => ug == null ? null : ug / 1881;
 
-  let places = store.get("places", []);       // [{name, lat, lon}]
-  let selected = store.get("selected", "here"); // "here" or index as string
-  let here = store.get("here", null);          // {name, lat, lon}
+  // ---------- Mascot ----------
+  // 단계별 표정. 몸 중심은 (100,110) 근처.
+  function star(cx, cy, r, fill) {
+    const k = r * 0.32;
+    return `<path d="M${cx} ${cy - r} Q${cx + k} ${cy - k} ${cx + r} ${cy} Q${cx + k} ${cy + k} ${cx} ${cy + r} Q${cx - k} ${cy + k} ${cx - r} ${cy} Q${cx - k} ${cy - k} ${cx} ${cy - r}Z" fill="${fill}"/>`;
+  }
+  function features(g, ink, mini) {
+    const s = `stroke="${ink}" stroke-width="${mini ? 8 : 6}" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+    const hl = mini ? "" : "";
+    let eyes = "", mouth = "", extra = "";
+    const blush = (op) => `<circle cx="60" cy="126" r="11" fill="#ff8fa3" opacity="${op}"/><circle cx="140" cy="126" r="11" fill="#ff8fa3" opacity="${op}"/>`;
+    switch (g) {
+      case 1:
+        eyes = star(76, 104, 14, ink) + star(124, 104, 14, ink);
+        mouth = `<path d="M76 126 Q100 160 124 126 Z" fill="${ink}"/><ellipse cx="100" cy="143" rx="10" ry="5" fill="#ff7b8e"/>`;
+        extra = blush(mini ? 0 : .6);
+        break;
+      case 2:
+        eyes = `<path d="M64 108 Q76 92 88 108" ${s}/><path d="M112 108 Q124 92 136 108" ${s}/>`;
+        mouth = `<path d="M82 128 Q100 150 118 128 Z" fill="${ink}"/>`;
+        extra = blush(mini ? 0 : .55);
+        break;
+      case 3:
+        eyes = `<circle cx="76" cy="104" r="9" fill="${ink}"/><circle cx="124" cy="104" r="9" fill="${ink}"/>` +
+          (mini ? "" : `<circle cx="79" cy="101" r="3" fill="#fff"/><circle cx="127" cy="101" r="3" fill="#fff"/>`);
+        mouth = `<path d="M84 128 Q100 144 116 128" ${s}/>`;
+        extra = blush(mini ? 0 : .45);
+        break;
+      case 4:
+        eyes = `<circle cx="76" cy="106" r="8" fill="${ink}"/><circle cx="124" cy="106" r="8" fill="${ink}"/>`;
+        mouth = `<path d="M88 134 Q100 139 112 134" ${s}/>`;
+        break;
+      case 5:
+        eyes = `<circle cx="76" cy="108" r="8" fill="${ink}"/><circle cx="124" cy="108" r="8" fill="${ink}"/>` +
+          `<path d="M62 90 L86 84" ${s}/><path d="M114 84 L138 90" ${s}/>`;
+        mouth = `<path d="M88 140 Q100 134 112 140" ${s}/>`;
+        break;
+      case 6:
+        eyes = `<path d="M66 108 L86 108" ${s}/><path d="M114 108 L134 108" ${s}/>` +
+          `<path d="M62 92 L86 84" ${s}/><path d="M114 84 L138 92" ${s}/>`;
+        mouth = `<path d="M84 146 Q100 128 116 146" ${s}/>`;
+        extra = mini ? "" : `<path d="M150 70 Q160 86 150 92 Q140 86 150 70Z" fill="#9fd8ff" stroke="#5fb4ea" stroke-width="2"/>`;
+        break;
+      case 7:
+      case 8: {
+        eyes = g === 7
+          ? `<path d="M64 94 L84 103 L64 112" ${s}/><path d="M136 94 L116 103 L136 112" ${s}/>`
+          : `<path d="M66 94 L86 112 M86 94 L66 112" ${s}/><path d="M114 94 L134 112 M134 94 L114 112" ${s}/>`;
+        const mask = `<path d="M54 122 L28 108 M146 122 L172 108" stroke="${mini ? "#fff" : "#c9d1da"}" stroke-width="${mini ? 5 : 3}" stroke-linecap="round"/>` +
+          `<rect x="54" y="114" width="92" height="46" rx="18" fill="#fff" stroke="${mini ? "none" : "#c9d1da"}" stroke-width="3"/>` +
+          (mini ? "" : `<path d="M64 128 H136 M62 138 H138 M64 148 H136" stroke="#dce2e8" stroke-width="2"/>`);
+        mouth = mask;
+        if (g === 8 && !mini) extra = `<path d="M52 108 Q46 124 52 130 Q58 124 52 108Z" fill="#9fd8ff" stroke="#5fb4ea" stroke-width="2"/><path d="M148 108 Q142 124 148 130 Q154 124 148 108Z" fill="#9fd8ff" stroke="#5fb4ea" stroke-width="2"/>`;
+        break;
+      }
+      default:
+        eyes = `<circle cx="76" cy="106" r="7" fill="${ink}" opacity=".5"/><circle cx="124" cy="106" r="7" fill="${ink}" opacity=".5"/>`;
+        mouth = `<path d="M90 136 H110" ${s} opacity=".5"/>`;
+    }
+    return extra + eyes + mouth + hl;
+  }
+
+  function mascotSVG(g) {
+    // 머리 위 새싹: 공기가 나빠질수록 시든다
+    const tilt = g >= 7 ? 62 : g >= 5 ? 28 : 0;
+    const leaf = g >= 7 ? "#9a8a63" : g >= 5 ? "#8fb04a" : "#5cc96b";
+    const leafDark = g >= 7 ? "#7d6e4a" : g >= 5 ? "#6f8f33" : "#3ea851";
+    const body = g === 8 ? "#e4e5ea" : "#ffffff";
+    return `<svg viewBox="0 0 200 200" role="img" aria-label="${NAMES[g]} 표정의 마스코트">
+      <ellipse cx="100" cy="190" rx="52" ry="7" fill="#000" opacity=".14"/>
+      <g transform="rotate(${tilt} 100 40)">
+        <path d="M100 42 Q99 30 100 20" stroke="${leafDark}" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <path d="M100 24 Q82 6 68 16 Q82 30 100 24Z" fill="${leaf}"/>
+        <path d="M100 22 Q120 2 136 12 Q120 30 100 22Z" fill="${leaf}"/>
+      </g>
+      <ellipse cx="76" cy="178" rx="15" ry="9" fill="${body}"/>
+      <ellipse cx="124" cy="178" rx="15" ry="9" fill="${body}"/>
+      <path d="M100 38 C152 38 176 72 176 112 C176 154 144 182 100 182 C56 182 24 154 24 112 C24 72 48 38 100 38 Z" fill="${body}"/>
+      <path d="M58 62 Q70 50 86 48" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none" opacity="${g === 8 ? .7 : 0}"/>
+      ${features(g, "#283041", false)}
+    </svg>`;
+  }
+
+  function faceSVG(g) {
+    return `<svg class="face" viewBox="16 26 168 168" aria-hidden="true">
+      <circle cx="100" cy="110" r="80" fill="${COLORS[g]}" stroke="rgba(255,255,255,.85)" stroke-width="6"/>
+      ${features(g, "#ffffff", true)}
+    </svg>`;
+  }
+
+  let currentGrade = 0;
+  function setMascot(g) {
+    if (g === currentGrade && $("mascot").firstChild) return;
+    currentGrade = g;
+    $("mascot").innerHTML = mascotSVG(g);
+  }
+
+  $("mascot").addEventListener("click", () => {
+    const m = $("mascot");
+    m.classList.remove("squish"); void m.offsetWidth; m.classList.add("squish");
+    const el = document.createElement("span");
+    el.className = "pop";
+    el.textContent = POPS[Math.floor(Math.random() * POPS.length)];
+    el.style.setProperty("--dx", `${Math.round((Math.random() - .5) * 180)}px`);
+    el.style.setProperty("--rot", `${Math.round((Math.random() - .5) * 70)}deg`);
+    el.addEventListener("animationend", () => el.remove());
+    $("stage").append(el);
+    try { navigator.vibrate?.(12); } catch {}
+  });
+  $("mascot").addEventListener("animationend", (e) => {
+    if (e.animationName === "squish") $("mascot").classList.remove("squish");
+  });
+
+  // ---------- Places ----------
+  let places = store.get("places", []);
+  let selected = store.get("selected", "here");
+  let here = store.get("here", null);
   let lastLoad = 0;
   let editing = false;
 
-  // ---------- Places ----------
   function renderChips() {
     const box = $("chips");
     box.textContent = "";
@@ -329,10 +452,10 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
       });
       return b;
     };
-    box.append(mk("현재 위치", "here", false));
+    box.append(mk("📍 현재 위치", "here", false));
     places.forEach((p, i) => box.append(mk(p.name, String(i), true)));
     const add = document.createElement("button");
-    add.type = "button"; add.className = "chip add"; add.textContent = "+ 장소 추가";
+    add.type = "button"; add.className = "chip"; add.textContent = "+ 장소 추가";
     add.addEventListener("click", () => {
       const sb = $("searchBox"); sb.hidden = !sb.hidden;
       if (!sb.hidden) $("searchInput").focus();
@@ -346,18 +469,17 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
     if (selected === String(i)) selected = "here";
     else if (selected !== "here" && Number(selected) > i) selected = String(Number(selected) - 1);
     store.set("selected", selected);
+    if (!places.length) editing = false;
+    $("editBtn").setAttribute("aria-pressed", String(editing));
     renderChips();
-    if (!places.length) setEditing(false);
     load(true);
   }
 
-  function setEditing(on) {
-    editing = on;
-    $("editBtn").setAttribute("aria-pressed", String(on));
-    $("editBtn").textContent = on ? "완료" : "편집";
+  $("editBtn").addEventListener("click", () => {
+    editing = !editing;
+    $("editBtn").setAttribute("aria-pressed", String(editing));
     renderChips();
-  }
-  $("editBtn").addEventListener("click", () => setEditing(!editing));
+  });
 
   let searchTimer;
   $("searchInput").addEventListener("input", (e) => {
@@ -367,20 +489,20 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
     searchTimer = setTimeout(() => search(q), 300);
   });
 
+  function resultNote(ul, text) {
+    const li = document.createElement("li");
+    const b = document.createElement("button"); b.type = "button"; b.disabled = true; b.textContent = text;
+    li.append(b); ul.append(li);
+  }
+
   async function search(q) {
     const ul = $("results");
     try {
       const url = `${GEO}?name=${encodeURIComponent(q)}&count=8&language=ko&format=json&countryCode=KR`;
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await (await fetch(url)).json();
       ul.textContent = "";
       const list = data.results || [];
-      if (!list.length) {
-        const li = document.createElement("li");
-        const b = document.createElement("button"); b.type = "button"; b.disabled = true;
-        b.textContent = "검색 결과가 없어요. 시·군·구 이름으로 다시 찾아보세요.";
-        li.append(b); ul.append(li); return;
-      }
+      if (!list.length) return resultNote(ul, "검색 결과가 없어요. 시·군·구 이름으로 다시 찾아보세요.");
       for (const r of list) {
         const li = document.createElement("li");
         const b = document.createElement("button"); b.type = "button";
@@ -399,10 +521,7 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
       }
     } catch {
       ul.textContent = "";
-      const li = document.createElement("li");
-      const b = document.createElement("button"); b.type = "button"; b.disabled = true;
-      b.textContent = "검색하지 못했어요. 인터넷 연결을 확인해 주세요.";
-      li.append(b); ul.append(li);
+      resultNote(ul, "검색하지 못했어요. 인터넷 연결을 확인해 주세요.");
     }
   }
 
@@ -412,18 +531,16 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
       if (!navigator.geolocation) return reject(new Error("unsupported"));
       navigator.geolocation.getCurrentPosition(
         (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
-        (e) => reject(e),
+        reject,
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
       );
     });
   }
   async function placeName(lat, lon) {
     try {
-      const r = await fetch(`${REV}?latitude=${lat}&longitude=${lon}&localityLanguage=ko`);
-      const d = await r.json();
+      const d = await (await fetch(`${REV}?latitude=${lat}&longitude=${lon}&localityLanguage=ko`)).json();
       const parts = [d.city || d.principalSubdivision, d.locality].filter(Boolean);
-      const uniq = parts.filter((v, i) => parts.indexOf(v) === i);
-      return uniq.join(" ") || "현재 위치";
+      return parts.filter((v, i) => parts.indexOf(v) === i).join(" ") || "현재 위치";
     } catch { return "현재 위치"; }
   }
 
@@ -438,9 +555,9 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
       store.set("here", here);
       hideMsg();
       return here;
-    } catch (e) {
+    } catch {
       if (here) { showMsg("위치를 새로 확인하지 못해 마지막으로 확인한 위치를 보여드려요."); return here; }
-      showMsg("위치 권한이 없어 서울 기준으로 보여드려요. 브라우저 설정에서 위치를 허용하거나 ‘+ 장소 추가’로 동네를 등록하세요.");
+      showMsg("위치 권한이 없어 서울 기준으로 보여드려요. 설정에서 위치를 허용하거나 ‘+ 장소 추가’로 동네를 등록하세요.");
       return { name: "서울 (기본값)", lat: 37.5665, lon: 126.978 };
     }
   }
@@ -475,7 +592,7 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
       store.set("last:" + selected, snapshot);
       render(snapshot);
       lastLoad = Date.now();
-    } catch (e) {
+    } catch {
       const cached = store.get("last:" + selected, null);
       if (cached) { render(cached); showMsg("최신 정보를 받지 못해 저장해 둔 정보를 보여드려요. 인터넷 연결을 확인해 주세요."); }
       else { renderEmpty(); showMsg("대기질 정보를 받지 못했어요. 인터넷 연결을 확인한 뒤 새로고침을 눌러 주세요."); }
@@ -486,42 +603,41 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
   }
 
   // ---------- Render ----------
-  function scaleHTML(v, cuts, max) {
-    const bounds = [0, ...cuts, max];
-    const segs = bounds.slice(1).map((b, i) => `<i class="g${i + 1}b" style="flex:${b - bounds[i]}"></i>`).join("");
-    const ticks = bounds.slice(0, -1).map((b) => `<span style="left:${(b / max) * 100}%">${b}</span>`).join("");
-    const pos = v == null ? null : Math.min(Math.max(v, 0), max) / max * 100;
-    return `<div class="scale"><div class="segs">${segs}</div><div class="ticks">${ticks}</div>${pos == null ? "" : `<div class="pin" style="left:${pos}%"></div>`}</div>`;
+  function setTone(g) {
+    document.documentElement.dataset.grade = String(g);
+    $("themeColor").setAttribute("content", COLORS[g]);
+    const sb = window.Capacitor?.Plugins?.StatusBar;
+    if (sb) {
+      sb.setBackgroundColor({ color: COLORS[g] }).catch(() => {});
+      sb.setStyle({ style: "DARK" }).catch(() => {});
+    }
   }
 
-  function readingHTML(label, sub, v, cuts, max) {
-    const g = grade(v, cuts);
-    const val = v == null ? "–" : Math.round(v);
-    return `<div class="reading-head">
-        <div class="label">${label}<span>${sub}</span></div>
-        <div class="right"><span class="gname g${g}b">${NAMES[g]}</span><span class="val">${val}<small>㎍/㎥</small></span></div>
-      </div>${scaleHTML(v, cuts, max)}`;
+  function pmHTML(label, sub, v, g) {
+    return `<div class="lbl">${label}<span>${sub}</span></div>${faceSVG(g)}
+      <div class="gname">${NAMES[g]}</div>
+      <div class="val">${v == null ? "–" : Math.round(v)} ㎍/㎥</div>`;
   }
 
   function render({ place, data }) {
     const c = data.current || {};
-    const g10 = grade(c.pm10, STD.pm10), g25 = grade(c.pm2_5, STD.pm25);
+    const g10 = grade8(c.pm10, STD8.pm10), g25 = grade8(c.pm2_5, STD8.pm25);
     const g = Math.max(g10, g25);
-    const band = $("band");
-    band.classList.remove("skeleton");
-    band.dataset.grade = String(g);
+    document.body.classList.remove("skeleton");
+    setTone(g);
+    setMascot(g);
     $("placeName").textContent = place;
-    $("updated").textContent = c.time ? c.time.slice(11, 16) + " 기준" : "";
+    $("updated").textContent = c.time ? `${c.time.slice(5, 7)}/${c.time.slice(8, 10)} ${c.time.slice(11, 16)} 기준` : "";
     $("word").textContent = NAMES[g];
     $("advice").textContent = ADVICE[g];
-    $("r-pm10").innerHTML = readingHTML("미세먼지", "PM10", c.pm10, STD.pm10, 200);
-    $("r-pm25").innerHTML = readingHTML("초미세먼지", "PM2.5", c.pm2_5, STD.pm25, 100);
+    $("pm10").innerHTML = pmHTML("미세먼지", "PM10", c.pm10, g10);
+    $("pm25").innerHTML = pmHTML("초미세먼지", "PM2.5", c.pm2_5, g25);
 
     const o3 = o3ppm(c.ozone), no2 = no2ppm(c.nitrogen_dioxide);
-    const go3 = grade(o3, STD.o3), gno2 = grade(no2, STD.no2);
-    $("minor").innerHTML =
-      `<div><dt>오존</dt><dd>${o3 == null ? "–" : o3.toFixed(3)} ppm<b class="g${go3}c">${NAMES[go3]}</b></dd></div>` +
-      `<div><dt>이산화질소</dt><dd>${no2 == null ? "–" : no2.toFixed(3)} ppm<b class="g${gno2}c">${NAMES[gno2]}</b></dd></div>`;
+    const go3 = grade4(o3, STD4.o3), gno2 = grade4(no2, STD4.no2);
+    $("gases").innerHTML =
+      `<div class="gas"><dt>오존</dt><dd>${o3 == null ? "–" : o3.toFixed(3)} ppm<b>${NAMES4[go3]}</b></dd></div>` +
+      `<div class="gas"><dt>이산화질소</dt><dd>${no2 == null ? "–" : no2.toFixed(3)} ppm<b>${NAMES4[gno2]}</b></dd></div>`;
 
     renderHours(data);
     renderDays(data);
@@ -534,19 +650,14 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
     let start = h.time.findIndex((t) => t.slice(0, 13) >= nowKey);
     if (start < 0) start = 0;
     const end = Math.min(start + 24, h.time.length);
-    // 막대 높이는 이 24시간 중 최댓값에 맞추되, 깨끗한 날이 과장되지 않게 최소 50으로 둔다.
-    const max = Math.max(50, ...h.pm2_5.slice(start, end).filter((v) => v != null));
     for (let i = start; i < end; i++) {
-      const p25 = h.pm2_5[i], p10 = h.pm10[i];
-      const g = Math.max(grade(p25, STD.pm25), grade(p10, STD.pm10));
+      const g = worst(h.pm10[i], h.pm2_5[i]);
       const hr = Number(h.time[i].slice(11, 13));
       const d = document.createElement("div"); d.className = "hour";
-      const label = i === start ? "지금" : (hr === 0 ? "0시" : hr + "시");
-      const height = p25 == null ? 4 : Math.max(4, Math.min(p25, max) / max * 72);
-      d.innerHTML = `<span class="t${i === start ? " now" : ""}">${label}</span>
-        <span class="bar g${g}b" style="height:${height}px" title="${NAMES[g]}"></span>
-        <span class="v">${p25 == null ? "–" : Math.round(p25)}</span>
-        <span class="v2">${p10 == null ? "–" : Math.round(p10)}</span>`;
+      d.innerHTML = `<span class="t${i === start ? " now" : ""}">${i === start ? "지금" : hr + "시"}</span>
+        ${faceSVG(g)}
+        <span class="g">${NAMES[g]}</span>
+        <span class="v">${h.pm2_5[i] == null ? "–" : Math.round(h.pm2_5[i])}/${h.pm10[i] == null ? "–" : Math.round(h.pm10[i])}</span>`;
       box.append(d);
     }
     box.scrollLeft = 0;
@@ -566,39 +677,53 @@ section h2 span { font-weight: 400; letter-spacing: 0; }
     const rel = ["오늘", "내일", "모레"];
     const wd = ["일", "월", "화", "수", "목", "금", "토"];
     [...byDay.entries()].slice(0, 5).forEach(([k, v], i) => {
-      if (v.p10.length < 12 && i > 0) return; // 하루치가 덜 찬 마지막 날은 생략
+      if (v.p10.length < 12 && i > 0) return; // 하루치가 덜 찬 날은 생략
       const a10 = avg(v.p10), a25 = avg(v.p25);
-      const g = Math.max(grade(a10, STD.pm10), grade(a25, STD.pm25));
+      const g = worst(a10, a25);
       const day = new Date(k + "T12:00:00+09:00").getUTCDay();
       const md = `${Number(k.slice(5, 7))}/${Number(k.slice(8, 10))} (${wd[day]})`;
       const li = document.createElement("li");
       li.innerHTML = `<span class="d">${rel[i] || wd[day] + "요일"}<small>${md}</small></span>
-        <span class="g g${g}c"><span class="dot g${g}b"></span>${NAMES[g]}</span>
-        <span class="n">초 <b>${a25 == null ? "–" : Math.round(a25)}</b></span>
-        <span class="n">미 <b>${a10 == null ? "–" : Math.round(a10)}</b></span>`;
+        ${faceSVG(g)}
+        <span class="g">${NAMES[g]}</span>
+        <span class="n">초미세 <b>${a25 == null ? "–" : Math.round(a25)}</b><br>미세 <b>${a10 == null ? "–" : Math.round(a10)}</b></span>`;
       ul.append(li);
     });
   }
 
+  function renderStd() {
+    const range = (cuts) => cuts.map((c, i) => `${i === 0 ? 0 : cuts[i - 1] + 1}–${c}`).concat(`${cuts[cuts.length - 1] + 1}+`);
+    const r10 = range(STD8.pm10), r25 = range(STD8.pm25);
+    const head = NAMES.slice(1).map((n, i) => `<th><i style="background:${COLORS[i + 1]}"></i>${n}</th>`).join("");
+    $("std").innerHTML = `<thead><tr><th></th>${head}</tr></thead><tbody>
+      <tr><td>미세</td>${r10.map((r) => `<td>${r}</td>`).join("")}</tr>
+      <tr><td>초미세</td>${r25.map((r) => `<td>${r}</td>`).join("")}</tr></tbody>`;
+  }
+
   function renderEmpty() {
-    $("band").dataset.grade = "0";
-    $("band").classList.remove("skeleton");
+    document.body.classList.remove("skeleton");
+    setTone(0); setMascot(0);
     $("word").textContent = NAMES[0];
     $("advice").textContent = ADVICE[0];
-    $("r-pm10").innerHTML = readingHTML("미세먼지", "PM10", null, STD.pm10, 200);
-    $("r-pm25").innerHTML = readingHTML("초미세먼지", "PM2.5", null, STD.pm25, 100);
+    $("pm10").innerHTML = pmHTML("미세먼지", "PM10", null, 0);
+    $("pm25").innerHTML = pmHTML("초미세먼지", "PM2.5", null, 0);
   }
 
   // ---------- Boot ----------
   $("refreshBtn").addEventListener("click", () => load(true));
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(false); });
 
+  renderStd();
   renderChips();
+  setMascot(0); currentGrade = -1;
+  $("pm10").innerHTML = pmHTML("미세먼지", "PM10", null, 0);
+  $("pm25").innerHTML = pmHTML("초미세먼지", "PM2.5", null, 0);
   const cached = store.get("last:" + selected, null);
   if (cached) render(cached);
   load(true);
 
-  if ("serviceWorker" in navigator && location.protocol === "https:") {
+  // 설치형 앱(안드로이드 APK) 안에서는 서비스 워커를 쓰지 않는다
+  if ("serviceWorker" in navigator && location.protocol === "https:" && !window.Capacitor) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 })();

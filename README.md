@@ -3,7 +3,8 @@
 광고 없는 미세먼지·초미세먼지 확인 웹앱. 휴대폰 홈 화면에 추가하면 앱처럼 쓸 수 있다.
 
 - 현재 위치 또는 저장한 동네의 미세먼지(PM10)·초미세먼지(PM2.5), 오존, 이산화질소
-- 환경부 4단계 등급(좋음/보통/나쁨/매우나쁨)
+- WHO 권고 기반 8단계 등급(최고/좋음/양호/보통/나쁨/상당히 나쁨/매우 나쁨/최악)
+- 단계마다 표정이 바뀌는 마스코트, 누르면 랜덤 이모지가 튀어나옴
 - 시간별(24시간)·일별(하루 평균) 예보
 - 오프라인일 때 마지막으로 받은 정보 표시
 
@@ -12,3 +13,12 @@
 ## 배포
 
 GitHub 저장소 Settings → Pages → Build and deployment에서 Source를 "Deploy from a branch"로, 브랜치와 `/ (root)` 폴더를 고르면 `https://<사용자>.github.io/<저장소>/`에서 열린다.
+
+## 안드로이드 앱 (APK)
+
+`claude/mobile-app-analysis-xaigd2` 브랜치에 푸시하면 GitHub Actions(`.github/workflows/android.yml`)가
+Capacitor로 APK를 빌드해 `app-latest` 릴리스에 `oneulmeonji.apk`로 올린다.
+
+- 서명: `android-keystore/debug.keystore`(공개된 디버그 키). 매 빌드가 같은 키로 서명되어 덮어 설치가 된다.
+  개인용 설치 파일이므로 Play 스토어 배포용으로 쓰지 않는다.
+- 로컬 빌드: `npm install && sh scripts/build-www.sh && npx cap add android` 후 Android Studio에서 연다.

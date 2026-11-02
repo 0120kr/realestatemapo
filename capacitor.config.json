@@ -1,0 +1,14 @@
+{
+  "appId": "kr.oneulmeonji.app",
+  "appName": "오늘먼지",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#2b97ea"
+  },
+  "plugins": {
+    "StatusBar": {
+      "backgroundColor": "#2b97ea",
+      "style": "DARK"
+    }
+  }
+}

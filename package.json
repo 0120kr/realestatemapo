@@ -1,0 +1,17 @@
+{
+  "name": "oneulmeonji",
+  "version": "1.0.0",
+  "private": true,
+  "description": "광고 없는 미세먼지 앱",
+  "scripts": {
+    "build:www": "sh scripts/build-www.sh"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.2.1",
+    "@capacitor/core": "6.2.1",
+    "@capacitor/status-bar": "6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "6.2.1"
+  }
+}
