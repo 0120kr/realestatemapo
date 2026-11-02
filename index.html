@@ -115,6 +115,8 @@ button { cursor: pointer; }
 }
 .mascot svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .mascot.squish { animation: squish .42s ease; }
+.mascot .blink { transform-box: fill-box; transform-origin: center; animation: blink 4.6s infinite; }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes squish {
   0% { transform: scale(1, 1); }
@@ -190,7 +192,7 @@ button { cursor: pointer; }
 .skeleton .word, .skeleton .pm .gname { opacity: .4; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mascot, .mascot.squish { animation: none; }
+  .mascot, .mascot.squish, .mascot .blink { animation: none; }
   .pop { animation-duration: .01s; }
   * { transition: none !important; }
 }
@@ -378,24 +380,120 @@ button { cursor: pointer; }
     return extra + eyes + mouth + hl;
   }
 
+  // 가운데 마스코트: 가운데 가르마에 머리를 뒤로 묶은 연보라 원피스 여자아이.
+  // 단계마다 눈·눈썹·입·팔·소품이 바뀐다.
+  function girlFace(g) {
+    const ink = "#3b2b27";
+    const s = `stroke="${ink}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+    const openEye = (cx) =>
+      `<ellipse cx="${cx}" cy="102" rx="7" ry="8.6" fill="${ink}"/>` +
+      `<circle cx="${cx + 2.4}" cy="98.6" r="2.6" fill="#fff"/><circle cx="${cx - 2.6}" cy="105.5" r="1.2" fill="#fff" opacity=".8"/>` +
+      `<path d="M${cx - 8.5} 95.5 Q${cx} 90 ${cx + 8.5} 95.5" ${s} stroke-width="2.4"/>`;
+    const worriedBrows = `<path d="M71 86 L87 81" ${s} stroke-width="2.6"/><path d="M113 81 L129 86" ${s} stroke-width="2.6"/>`;
+    const calmBrows = `<path d="M72 83 Q79 80 86 82" ${s} stroke-width="2.2"/><path d="M114 82 Q121 80 128 83" ${s} stroke-width="2.2"/>`;
+    const blush = (op) => `<ellipse cx="66" cy="117" rx="9" ry="6" fill="#ff8f9f" opacity="${op}"/><ellipse cx="134" cy="117" rx="9" ry="6" fill="#ff8f9f" opacity="${op}"/>`;
+    const tear = (x, y) => `<path d="M${x} ${y} Q${x - 5} ${y + 12} ${x} ${y + 16} Q${x + 5} ${y + 12} ${x} ${y}Z" fill="#a9dcff" stroke="#6bb8ec" stroke-width="1.5"/>`;
+    const mask =
+      `<path d="M70 116 Q54 108 44 102 M130 116 Q146 108 156 102" stroke="#d3dae2" stroke-width="2.4" stroke-linecap="round" fill="none"/>` +
+      `<rect x="69" y="108" width="62" height="34" rx="13" fill="#fff" stroke="#d3dae2" stroke-width="2.2"/>` +
+      `<path d="M76 119 H124 M75 127 H125 M76 135 H124" stroke="#e3e8ee" stroke-width="1.6"/>`;
+    let eyes = "", brows = calmBrows, mouth = "", extra = "";
+    switch (g) {
+      case 1:
+        eyes = star(80, 102, 10, ink) + star(120, 102, 10, ink) +
+          `<circle cx="84" cy="97" r="2" fill="#fff"/><circle cx="124" cy="97" r="2" fill="#fff"/>`;
+        mouth = `<path d="M87 117 Q100 135 113 117 Z" fill="#8a3b3b"/><ellipse cx="100" cy="127" rx="6" ry="3.4" fill="#ff8597"/>`;
+        extra = blush(.65);
+        break;
+      case 2:
+        eyes = `<path d="M71 104 Q80 93 89 104" ${s} stroke-width="4"/><path d="M111 104 Q120 93 129 104" ${s} stroke-width="4"/>`;
+        mouth = `<path d="M89 118 Q100 132 111 118 Z" fill="#8a3b3b"/><ellipse cx="100" cy="126" rx="5" ry="2.6" fill="#ff8597"/>`;
+        extra = blush(.55);
+        break;
+      case 3:
+        eyes = openEye(80) + openEye(120);
+        mouth = `<path d="M90 120 Q100 128 110 120" ${s} stroke="#9a4a46"/>`;
+        extra = blush(.4);
+        break;
+      case 4:
+        eyes = openEye(80) + openEye(120);
+        mouth = `<path d="M93 122 Q100 125 107 122" ${s} stroke="#9a4a46"/>`;
+        extra = blush(.25);
+        break;
+      case 5:
+        eyes = openEye(80) + openEye(120);
+        brows = worriedBrows;
+        mouth = `<path d="M92 125 Q100 120 108 125" ${s} stroke="#9a4a46"/>`;
+        break;
+      case 6:
+        eyes = `<path d="M71 101 H89" ${s}/><path d="M73 101 Q80 109 87 101 Z" fill="${ink}"/>` +
+          `<path d="M111 101 H129" ${s}/><path d="M113 101 Q120 109 127 101 Z" fill="${ink}"/>`;
+        brows = worriedBrows;
+        mouth = `<path d="M90 128 Q100 118 110 128" ${s} stroke="#9a4a46"/>`;
+        extra = tear(150, 70);
+        break;
+      case 7:
+        eyes = `<path d="M72 95 L87 102 L72 109" ${s} stroke-width="4"/><path d="M128 95 L113 102 L128 109" ${s} stroke-width="4"/>`;
+        brows = worriedBrows;
+        mouth = mask;
+        break;
+      case 8:
+        eyes = `<path d="M71 100 Q80 107 89 100" ${s} stroke-width="4"/><path d="M111 100 Q120 107 129 100" ${s} stroke-width="4"/>`;
+        brows = worriedBrows;
+        mouth = mask;
+        extra = tear(66, 104) + tear(134, 104) + tear(58, 124) + tear(142, 124);
+        break;
+      default:
+        eyes = openEye(80) + openEye(120);
+        mouth = `<path d="M94 123 H106" ${s} stroke="#9a4a46"/>`;
+    }
+    const nose = g >= 7 ? "" : `<path d="M98.5 111 Q100 113 101.5 111" stroke="#e0a080" stroke-width="2" stroke-linecap="round" fill="none"/>`;
+    return `${extra}${brows}${nose}<g class="${g >= 3 && g <= 5 || g === 0 ? "blink" : ""}">${eyes}</g>${mouth}`;
+  }
+
   function mascotSVG(g) {
-    // 머리 위 새싹: 공기가 나빠질수록 시든다
-    const tilt = g >= 7 ? 62 : g >= 5 ? 28 : 0;
-    const leaf = g >= 7 ? "#9a8a63" : g >= 5 ? "#8fb04a" : "#5cc96b";
-    const leafDark = g >= 7 ? "#7d6e4a" : g >= 5 ? "#6f8f33" : "#3ea851";
-    const body = g === 8 ? "#e4e5ea" : "#ffffff";
+    const skin = g === 8 ? "#efd5c6" : "#ffdcc6";
+    const skinShade = "#f3c4a8";
+    const hair = "#2b2220";
+    const dress = g >= 7 ? "#a693c4" : "#b99be6";
+    const sleeve = g >= 7 ? "#b8a8d2" : "#cdb4f0";
+    const cheer = g === 1 || g === 2;
+    const arms = cheer
+      ? `<path d="M68 150 Q48 148 34 128" stroke="${skin}" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="32" cy="125" r="7" fill="${skin}"/>` +
+        `<path d="M132 150 Q152 148 166 128" stroke="${skin}" stroke-width="10" stroke-linecap="round" fill="none"/><circle cx="168" cy="125" r="7" fill="${skin}"/>`
+      : g >= 7
+        ? `<path d="M70 152 Q62 166 76 172" stroke="${skin}" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M130 152 Q138 166 124 172" stroke="${skin}" stroke-width="10" stroke-linecap="round" fill="none"/>`
+        : `<path d="M70 152 Q62 166 64 178" stroke="${skin}" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M130 152 Q138 166 136 178" stroke="${skin}" stroke-width="10" stroke-linecap="round" fill="none"/>`;
+    // 머리 별 핀: 공기가 좋을수록 반짝인다
+    const pin = g >= 7 ? "#b9a77a" : "#ffcf3f";
+    const sparkles = g === 1
+      ? star(30, 62, 8, "#fff6b0") + star(170, 54, 10, "#fff6b0") + star(160, 120, 6, "#fff6b0")
+      : g === 2 ? star(168, 60, 7, "#fff6b0") : "";
     return `<svg viewBox="0 0 200 200" role="img" aria-label="${NAMES[g]} 표정의 마스코트">
-      <ellipse cx="100" cy="190" rx="52" ry="7" fill="#000" opacity=".14"/>
-      <g transform="rotate(${tilt} 100 40)">
-        <path d="M100 42 Q99 30 100 20" stroke="${leafDark}" stroke-width="5" stroke-linecap="round" fill="none"/>
-        <path d="M100 24 Q82 6 68 16 Q82 30 100 24Z" fill="${leaf}"/>
-        <path d="M100 22 Q120 2 136 12 Q120 30 100 22Z" fill="${leaf}"/>
-      </g>
-      <ellipse cx="76" cy="178" rx="15" ry="9" fill="${body}"/>
-      <ellipse cx="124" cy="178" rx="15" ry="9" fill="${body}"/>
-      <path d="M100 38 C152 38 176 72 176 112 C176 154 144 182 100 182 C56 182 24 154 24 112 C24 72 48 38 100 38 Z" fill="${body}"/>
-      <path d="M58 62 Q70 50 86 48" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none" opacity="${g === 8 ? .7 : 0}"/>
-      ${features(g, "#283041", false)}
+      <ellipse cx="100" cy="194" rx="44" ry="6" fill="#000" opacity=".14"/>
+      ${sparkles}
+      <ellipse cx="88" cy="190" rx="10" ry="5.5" fill="#6b4ea0"/>
+      <ellipse cx="112" cy="190" rx="10" ry="5.5" fill="#6b4ea0"/>
+      ${arms}
+      <path d="M80 140 Q100 148 120 140 L142 186 Q100 196 58 186 Z" fill="${dress}"/>
+      <path d="M62 182 Q100 192 138 182" stroke="#fff" stroke-width="3" stroke-dasharray="1 6" stroke-linecap="round" fill="none" opacity=".8"/>
+      <circle cx="74" cy="148" r="13" fill="${sleeve}"/>
+      <circle cx="126" cy="148" r="13" fill="${sleeve}"/>
+      <rect x="93" y="128" width="14" height="14" rx="5" fill="${skinShade}"/>
+      <path d="M86 140 Q100 152 114 140" stroke="#e2b23a" stroke-width="1.6" fill="none"/>
+      ${star(100, 150, 5, "#ffcf3f")}
+      <ellipse cx="100" cy="84" rx="61" ry="57" fill="${hair}"/>
+      <ellipse cx="100" cy="31" rx="13" ry="10" fill="${hair}"/>
+      <circle cx="43" cy="104" r="9" fill="${skin}"/>
+      <circle cx="157" cy="104" r="9" fill="${skin}"/>
+      <ellipse cx="100" cy="100" rx="55" ry="50" fill="${skin}"/>
+      <path d="M100 46 Q62 42 46 100 Q52 68 98 60 Z" fill="${hair}"/>
+      <path d="M100 46 Q138 42 154 100 Q148 68 102 60 Z" fill="${hair}"/>
+      <path d="M48 96 Q43 112 50 126" stroke="${hair}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M152 96 Q157 112 150 126" stroke="${hair}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M97 60 Q90 70 93 80" stroke="${hair}" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      <g transform="rotate(${g >= 7 ? 30 : 0} 138 62)">${star(138, 62, 9, pin)}</g>
+      ${girlFace(g)}
     </svg>`;
   }
 
