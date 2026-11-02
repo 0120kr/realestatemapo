@@ -310,7 +310,7 @@ button { cursor: pointer; }
 
   <div class="panel" id="akPanel">
     <h2>에어코리아 실측값 <span id="akState">꺼짐</span></h2>
-    <p class="note" id="akHelp">공공데이터포털 인증키로 가까운 에어코리아 측정소의 실제 값을 받아와요. 앱에 기본 키가 들어 있으면 따로 넣지 않아도 돼요. 다른 키를 쓰려면 넣고 저장하세요. 칸을 비우고 저장하면 기본 키로 돌아가요.</p>
+    <p class="note" id="akHelp">지금 값은 예측 모델 추정치예요. 공공데이터포털(data.go.kr)에서 무료 인증키를 받아 넣으면, 가까운 에어코리아 측정소에서 잰 실제 값을 보여드려요. 키는 이 휴대폰에만 저장돼요.</p>
     <form class="search-row" id="akForm" style="margin-top:10px">
       <input id="akKey" type="text" placeholder="일반 인증키 (Decoding) 붙여넣기" autocomplete="off" spellcheck="false" style="min-height:44px;padding:0 12px;border-radius:12px;border:0;background:#fff;color:#1d2430;font-family:var(--font-data);font-size:12px">
       <button class="search-go" type="submit">저장</button>
@@ -847,10 +847,7 @@ button { cursor: pointer; }
   function flashMsg(t) { showMsg(t); msgTimer = setTimeout(hideMsg, 2800); }
 
   // ---------- 에어코리아 실측값 ----------
-  // 기본 인증키는 APK를 빌드할 때 GitHub 비밀값 AK_KEY로 채워진다. 저장소에는 키를 두지 않는다.
-  const AK_BUILD_KEY = "__AK_KEY__";
-  const AK_DEFAULT_KEY = AK_BUILD_KEY.startsWith("__") ? "" : AK_BUILD_KEY;
-  let akKey = store.get("akKey", "") || AK_DEFAULT_KEY;
+  let akKey = store.get("akKey", "");
   const akParam = (k) => (k.includes("%") ? k : encodeURIComponent(k));
   async function akGet(path, params) {
     const q = Object.entries({ returnType: "json", ...params }).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
@@ -894,14 +891,13 @@ button { cursor: pointer; }
     throw new Error("가까운 측정소에 최근 측정값이 없어요");
   }
   function akStatus(text) { $("akState").textContent = text; }
-  $("akKey").value = akKey === AK_DEFAULT_KEY ? "" : akKey;
-  akStatus(akKey ? (akKey === AK_DEFAULT_KEY ? "기본 키" : "켜짐") : "꺼짐");
+  $("akKey").value = akKey;
+  akStatus(akKey ? "켜짐" : "꺼짐");
   $("akForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    akKey = $("akKey").value.trim() || AK_DEFAULT_KEY;
-    store.set("akKey", akKey === AK_DEFAULT_KEY ? "" : akKey);
+    akKey = $("akKey").value.trim();
+    store.set("akKey", akKey);
     try { localStorage.removeItem("akStations"); } catch {}
-    $("akKey").value = akKey === AK_DEFAULT_KEY ? "" : akKey;
     akStatus(akKey ? "확인 중" : "꺼짐");
     $("akKey").blur();
     load(true);

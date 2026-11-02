@@ -34,6 +34,3 @@ Capacitor로 APK를 빌드해 `app-latest` 릴리스에 `oneulmeonji.apk`로 올
 3. 마이페이지에서 일반 인증키(Decoding)를 복사해 앱에 붙여넣기
 
 안드로이드 앱은 CapacitorHttp로 요청해 CORS 제한이 없다. 웹 버전은 브라우저 CORS 정책 때문에 막힐 수 있다.
-
-기본 인증키는 저장소에 두지 않는다. 저장소 Settings → Secrets and variables → Actions에
-`AK_KEY` 비밀값을 만들면 APK 빌드 때 앱의 기본 키로 들어간다.
