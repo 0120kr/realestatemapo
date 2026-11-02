@@ -304,7 +304,7 @@ button { cursor: pointer; }
   </div>
 
   <div class="panel">
-    <h2>8단계 기준 <span>WHO 권고 기반, ㎍/㎥</span></h2>
+    <h2>8단계 기준 <span>WHO 기준, ㎍/㎥</span></h2>
     <div class="std-wrap"><table class="std" id="std"></table></div>
   </div>
 
@@ -334,10 +334,12 @@ button { cursor: pointer; }
   const REV = "https://api.bigdatacloud.net/data/reverse-geocode-client";
   const STALE_MS = 10 * 60 * 1000;
 
-  // WHO 권고 기반 8단계 (각 단계의 상한값, 마지막 단계는 그 이상)
+  // WHO 기준 8단계 (각 단계의 상한값, 마지막 단계는 그 이상)
+  // 미세먼지는 미세미세 8단계 구간과 같다. 초미세먼지는 WHO 4단계 경계(9·15·50)를 지키며 나눈 값이다.
+  // 화면 전체 등급은 미세·초미세 중 더 나쁜 쪽을 따른다.
   const STD8 = {
-    pm10: [15, 30, 40, 50, 75, 100, 150],
-    pm25: [8, 15, 20, 25, 37, 50, 75],
+    pm10: [10, 22, 35, 45, 75, 100, 150],
+    pm25: [5, 9, 12, 15, 35, 50, 75],
   };
   // 환경부 4단계 (ppm)
   const STD4 = { o3: [0.030, 0.090, 0.150], no2: [0.030, 0.060, 0.200] };
