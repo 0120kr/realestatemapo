@@ -194,25 +194,38 @@ button { cursor: pointer; }
 .note a { color: var(--ink); }
 .msg { padding: 11px 14px; border-radius: 14px; background: rgba(0,0,0,.18); font-size: 13px; }
 
-/* 사진 마스코트 설정 */
+/* 말풍선 문구 설정 */
+.sheet .say { width: 100%; min-height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid #d6dce4; background: #fff; color: #1d2430; }
+.sheet label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #5a6474; }
+.sheet label span { flex: none; width: 1.2em; text-align: center; }
+.bubble {
+  position: absolute; left: 60%; top: 4px; z-index: 3;
+  max-width: min(190px, 46vw); width: max-content; padding: 9px 13px; border-radius: 16px 16px 16px 4px;
+  background: #fff; color: #1d2430; font-size: 15px; font-weight: 600; line-height: 1.4;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18); pointer-events: none; transform-origin: 0 100%;
+  animation: bubble 3.2s ease forwards;
+}
+.bubble::after { content: ""; position: absolute; left: 6px; top: 100%; border: 7px solid transparent; border-top-color: #fff; border-left-color: #fff; }
+@keyframes bubble {
+  0% { opacity: 0; transform: scale(.6); }
+  8% { opacity: 1; transform: scale(1.06); }
+  12% { transform: scale(1); }
+  85% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
 .sheet { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; background: #fff; color: #1d2430; }
 .sheet p { margin: 0; font-size: 13px; color: #5a6474; }
 .sheet .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn { min-height: 40px; padding: 0 16px; border-radius: 12px; border: 1px solid #d6dce4; background: #fff; color: #1d2430; font-weight: 600; font-size: 14px; }
 .btn.primary { background: #1d2430; border-color: #1d2430; color: #fff; }
-.crop {
-  position: relative; width: 240px; height: 240px; margin: 4px auto 0; border-radius: 50%; overflow: hidden;
-  background: #e8ecf0; touch-action: none; cursor: grab; box-shadow: 0 0 0 4px #fff, 0 0 0 5px #d6dce4;
-}
-.crop img { position: absolute; left: 50%; top: 50%; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
-.zoom { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5a6474; }
-.zoom input { flex: 1; min-width: 0; }
 
 .skeleton .word, .skeleton .pm .gname { opacity: .4; }
 
 @media (prefers-reduced-motion: reduce) {
   .mascot, .mascot.squish, .mascot .blink { animation: none; }
   .pop { animation-duration: .01s; }
+  .bubble { animation: none; }
   * { transition: none !important; }
 }
 </style>
@@ -226,8 +239,8 @@ button { cursor: pointer; }
       <time id="updated">불러오는 중</time>
     </div>
     <div class="tools">
-      <button class="icon-btn" id="photoBtn" type="button" aria-pressed="false" aria-label="마스코트 사진 바꾸기">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L5 21"/></svg>
+      <button class="icon-btn" id="sayBtn" type="button" aria-pressed="false" aria-label="말풍선 문구 넣기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>
       </button>
       <button class="icon-btn" id="editBtn" type="button" aria-pressed="false" aria-label="장소 편집">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -238,25 +251,18 @@ button { cursor: pointer; }
     </div>
   </div>
   <div class="chips" id="chips" role="toolbar" aria-label="장소"></div>
-  <div class="sheet" id="photoSheet" hidden>
-    <div id="photoPick">
-      <p>휴대폰에 있는 사진을 골라 가운데 마스코트로 쓸 수 있어요. 사진은 이 휴대폰에만 저장되고 어디에도 올라가지 않아요.</p>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="pickBtn" type="button">사진 고르기</button>
-        <button class="btn" id="resetPhotoBtn" type="button">기본 캐릭터로</button>
-      </div>
-      <input type="file" id="photoInput" accept="image/*" hidden>
+  <form class="sheet" id="saySheet" hidden>
+    <p>캐릭터를 5번 누를 때마다 아래 문구가 1번부터 차례로 말풍선으로 나와요. 빈 칸은 건너뛰어요.</p>
+    <label for="say1"><span>1</span><input class="say" id="say1" maxlength="40" placeholder="예: 유림아 사랑해"></label>
+    <label for="say2"><span>2</span><input class="say" id="say2" maxlength="40"></label>
+    <label for="say3"><span>3</span><input class="say" id="say3" maxlength="40"></label>
+    <label for="say4"><span>4</span><input class="say" id="say4" maxlength="40"></label>
+    <label for="say5"><span>5</span><input class="say" id="say5" maxlength="40"></label>
+    <div class="row">
+      <button class="btn primary" type="submit">저장</button>
+      <button class="btn" id="sayCancel" type="button">닫기</button>
     </div>
-    <div id="cropBox" hidden>
-      <p>얼굴이 동그라미 안에 꽉 차도록 끌어서 맞추세요.</p>
-      <div class="crop" id="crop"><img id="cropImg" alt=""></div>
-      <label class="zoom" for="zoom">확대 <input type="range" id="zoom" min="1" max="4" step="0.01" value="1"></label>
-      <div class="row">
-        <button class="btn primary" id="saveCropBtn" type="button">이 사진 쓰기</button>
-        <button class="btn" id="cancelCropBtn" type="button">취소</button>
-      </div>
-    </div>
-  </div>
+  </form>
   <div class="search" id="searchBox" hidden>
     <form class="search-row" id="searchForm" role="search">
       <input id="searchInput" type="search" placeholder="동네 이름 (예: 역삼동, 해운대구, 수원)" autocomplete="off" enterkeyhint="search">
@@ -560,120 +566,51 @@ button { cursor: pointer; }
     </svg>`;
   }
 
-  // 사진 마스코트: 표정은 바꿀 수 없으니 단계마다 효과를 얹는다
-  let photo = store.get("photo", null);
-  function cloud(x, y, k, color) {
-    return `<g transform="translate(${x} ${y}) scale(${k})" fill="${color}">
-      <circle cx="0" cy="0" r="10"/><circle cx="11" cy="-5" r="12"/><circle cx="24" cy="0" r="9"/><rect x="-2" y="-2" width="28" height="11" rx="5.5"/></g>`;
-  }
-  function photoSVG(g) {
-    const filters = ["grayscale(.4)", "saturate(1.15) brightness(1.06)", "saturate(1.08) brightness(1.03)", "none", "none",
-      "saturate(.85)", "saturate(.7) brightness(.97)", "saturate(.55) brightness(.94)", "grayscale(.65) brightness(.88)"];
-    const ring = COLORS[g];
-    const tear = (x, y) => `<path d="M${x} ${y} Q${x - 6} ${y + 14} ${x} ${y + 19} Q${x + 6} ${y + 14} ${x} ${y}Z" fill="#a9dcff" stroke="#6bb8ec" stroke-width="1.6"/>`;
-    const sweat = (x, y) => `<path d="M${x} ${y} Q${x + 9} ${y + 14} ${x} ${y + 20} Q${x - 9} ${y + 14} ${x} ${y}Z" fill="#a9dcff" stroke="#6bb8ec" stroke-width="1.6"/>`;
-    const heart = (x, y, k) => `<path transform="translate(${x} ${y}) scale(${k})" d="M0 4 C-6 -4 -14 2 0 12 C14 2 6 -4 0 4Z" fill="#ff7b95"/>`;
-    const mask =
-      `<path d="M64 124 Q40 112 22 100 M136 124 Q160 112 178 100" stroke="#e9eef3" stroke-width="3.4" stroke-linecap="round" fill="none"/>` +
-      `<rect x="60" y="114" width="80" height="48" rx="18" fill="#fff" stroke="#cfd7e0" stroke-width="2.4"/>` +
-      `<path d="M68 128 H132 M66 138 H134 M68 148 H132" stroke="#e3e8ee" stroke-width="2"/>`;
-    let fx = "";
-    switch (g) {
-      case 1: fx = star(26, 40, 13, "#fff6b0") + star(176, 30, 15, "#fff6b0") + star(184, 132, 9, "#fff6b0") + heart(24, 140, 1.3); break;
-      case 2: fx = star(178, 34, 12, "#fff6b0") + heart(24, 44, 1.1); break;
-      case 3: fx = star(178, 36, 8, "#fff6b0"); break;
-      case 5: fx = cloud(10, 30, 1, "#c9ced6"); break;
-      case 6: fx = cloud(4, 28, 1.1, "#b9bec7") + cloud(150, 18, .9, "#c4c9d1") + sweat(170, 64); break;
-      case 7: fx = mask + cloud(0, 24, 1.2, "#9fa5ae") + cloud(148, 14, 1.1, "#a9aeb7"); break;
-      case 8: fx = mask + tear(70, 98) + tear(130, 98) + cloud(-4, 20, 1.4, "#7f858f") + cloud(140, 8, 1.3, "#8a909a") + cloud(150, 150, 1, "#8a909a"); break;
-    }
-    return `<svg viewBox="0 0 200 200" role="img" aria-label="${NAMES[g]} 단계 마스코트 사진">
-      <defs><clipPath id="photoClip"><circle cx="100" cy="98" r="80"/></clipPath></defs>
-      <ellipse cx="100" cy="192" rx="56" ry="6" fill="#000" opacity=".14"/>
-      <circle cx="100" cy="98" r="88" fill="#fff"/>
-      <circle cx="100" cy="98" r="84" fill="${ring}"/>
-      <g clip-path="url(#photoClip)" style="filter:${filters[g]}"><image href="${photo}" x="20" y="18" width="160" height="160" preserveAspectRatio="xMidYMid slice"/></g>
-      ${fx}
-    </svg>`;
-  }
-
   let currentGrade = 0;
   function setMascot(g, force) {
     if (!force && g === currentGrade && $("mascot").firstChild) return;
     currentGrade = g;
-    $("mascot").innerHTML = photo ? photoSVG(g) : mascotSVG(g);
+    $("mascot").innerHTML = mascotSVG(g);
   }
 
-  // ---------- 사진 고르기·자르기 ----------
-  const crop = { img: null, base: 1, z: 1, ox: 0, oy: 0, V: 240 };
-  function showPhotoSheet(open) {
-    $("photoSheet").hidden = !open;
-    $("photoBtn").setAttribute("aria-pressed", String(open));
-    $("photoPick").hidden = false; $("cropBox").hidden = true;
+  // ---------- 말풍선 문구 ----------
+  try { localStorage.removeItem("photo"); } catch {} // 예전 사진 마스코트 데이터 정리
+  let sayings = store.get("sayings", ["", "", "", "", ""]);
+  let taps = 0, sayIdx = 0;
+  const sayInputs = [1, 2, 3, 4, 5].map((i) => $("say" + i));
+  function showSaySheet(open) {
+    $("saySheet").hidden = !open;
+    $("sayBtn").setAttribute("aria-pressed", String(open));
+    if (open) sayInputs.forEach((el, i) => { el.value = sayings[i] || ""; });
   }
-  $("photoBtn").addEventListener("click", () => showPhotoSheet($("photoSheet").hidden));
-  $("pickBtn").addEventListener("click", () => $("photoInput").click());
-  $("resetPhotoBtn").addEventListener("click", () => {
-    photo = null;
-    try { localStorage.removeItem("photo"); } catch {}
-    setMascot(currentGrade, true); showPhotoSheet(false);
+  $("sayBtn").addEventListener("click", () => showSaySheet($("saySheet").hidden));
+  $("sayCancel").addEventListener("click", () => showSaySheet(false));
+  $("saySheet").addEventListener("submit", (e) => {
+    e.preventDefault();
+    sayings = sayInputs.map((el) => el.value.trim());
+    store.set("sayings", sayings);
+    sayIdx = 0; taps = 0;
+    showSaySheet(false);
+    flashMsg(sayings.some(Boolean) ? "저장했어요. 캐릭터를 5번 눌러 보세요." : "문구를 모두 지웠어요.");
   });
-  $("photoInput").addEventListener("change", (e) => {
-    const f = e.target.files && e.target.files[0];
-    e.target.value = "";
-    if (!f) return;
-    const url = URL.createObjectURL(f);
-    const img = $("cropImg");
-    img.onload = () => {
-      crop.img = img;
-      crop.base = Math.max(crop.V / img.naturalWidth, crop.V / img.naturalHeight);
-      crop.z = 1; crop.ox = 0; crop.oy = 0; $("zoom").value = "1";
-      $("photoPick").hidden = true; $("cropBox").hidden = false;
-      drawCrop();
-    };
-    img.src = url;
-  });
-  function clampCrop() {
-    const w = crop.img.naturalWidth * crop.base * crop.z, h = crop.img.naturalHeight * crop.base * crop.z;
-    const mx = Math.max(0, (w - crop.V) / 2), my = Math.max(0, (h - crop.V) / 2);
-    crop.ox = Math.min(mx, Math.max(-mx, crop.ox));
-    crop.oy = Math.min(my, Math.max(-my, crop.oy));
-    return { w, h };
+  function nextSaying() {
+    for (let k = 0; k < 5; k++) {
+      const t = sayings[(sayIdx + k) % 5];
+      if (t) { sayIdx = (sayIdx + k + 1) % 5; return t; }
+    }
+    return null;
   }
-  function drawCrop() {
-    if (!crop.img) return;
-    const { w, h } = clampCrop();
-    const img = crop.img;
-    img.style.width = w + "px"; img.style.height = h + "px";
-    img.style.transform = `translate(calc(-50% + ${crop.ox}px), calc(-50% + ${crop.oy}px))`;
+  function showBubble(text) {
+    $("stage").querySelector(".bubble")?.remove();
+    const b = document.createElement("div");
+    b.className = "bubble"; b.textContent = text;
+    b.addEventListener("animationend", () => b.remove());
+    $("stage").append(b);
   }
-  $("zoom").addEventListener("input", (e) => { crop.z = Number(e.target.value); drawCrop(); });
-  let drag = null;
-  $("crop").addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, ox: crop.ox, oy: crop.oy }; $("crop").setPointerCapture(e.pointerId); });
-  $("crop").addEventListener("pointermove", (e) => {
-    if (!drag) return;
-    crop.ox = drag.ox + (e.clientX - drag.x); crop.oy = drag.oy + (e.clientY - drag.y); drawCrop();
-  });
-  const endDrag = () => { drag = null; };
-  $("crop").addEventListener("pointerup", endDrag);
-  $("crop").addEventListener("pointercancel", endDrag);
-  $("cancelCropBtn").addEventListener("click", () => showPhotoSheet(false));
-  $("saveCropBtn").addEventListener("click", () => {
-    const out = 480, k = out / crop.V;
-    const { w, h } = clampCrop();
-    const c = document.createElement("canvas"); c.width = out; c.height = out;
-    const ctx = c.getContext("2d");
-    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, out, out);
-    ctx.drawImage(crop.img, (out - w * k) / 2 + crop.ox * k, (out - h * k) / 2 + crop.oy * k, w * k, h * k);
-    const data = c.toDataURL("image/jpeg", 0.88);
-    try { localStorage.setItem("photo", JSON.stringify(data)); }
-    catch { showMsg("사진을 저장하지 못했어요. 휴대폰 저장 공간을 확인해 주세요."); }
-    photo = data;
-    setMascot(currentGrade, true);
-    showPhotoSheet(false);
-  });
 
   $("mascot").addEventListener("click", () => {
+    taps++;
+    if (taps % 5 === 0) { const t = nextSaying(); if (t) showBubble(t); }
     const m = $("mascot");
     m.classList.remove("squish"); void m.offsetWidth; m.classList.add("squish");
     const el = document.createElement("span");
