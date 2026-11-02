@@ -546,6 +546,146 @@ button { cursor: pointer; }
     </svg>`;
   }
 
+  // 동화책 색연필 그림 느낌의 초상화 마스코트. 단계마다 표정이 바뀐다.
+  function portraitFace(g) {
+    const ink = "#3a2722";
+    const line = (d, w = 1.8, c = ink) => `<path d="${d}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+    const openEye = (cx, look = 0) => {
+      const id = cx < 100 ? "pEyeL" : "pEyeR";
+      const shape = `M${cx - 9} 93.5 Q${cx - 1} 85 ${cx + 9} 92 Q${cx + 1} 99.5 ${cx - 9} 93.5 Z`;
+      return `<clipPath id="${id}"><path d="${shape}"/></clipPath>` +
+        `<path d="${shape}" fill="#fbf4ee"/>` +
+        `<g clip-path="url(#${id})"><circle cx="${cx + look}" cy="92.4" r="5.4" fill="#4b2e25"/><circle cx="${cx + look}" cy="92.4" r="2.7" fill="#1c110e"/>` +
+        `<circle cx="${cx + look + 1.8}" cy="90.4" r="1.6" fill="#fff"/><circle cx="${cx + look - 1.8}" cy="94.6" r=".8" fill="#fff" opacity=".8"/></g>` +
+        line(`M${cx - 9.8} 93.8 Q${cx - 1} 83.8 ${cx + 9.8} 91.6`, 2.1) +
+        line(`M${cx - 6} 88.6 Q${cx} 85.6 ${cx + 6} 87.8`, .8, "#8a5a4a");
+    };
+    const browCalm = line("M76 82.5 Q83 80 91 81.5", 1.6, "#4b342d") + line("M109 81.5 Q117 80 124 82.5", 1.6, "#4b342d");
+    const browWorry = line("M76 84 L91 80", 1.8, "#4b342d") + line("M109 80 L124 84", 1.8, "#4b342d");
+    const blush = (op) => `<ellipse cx="77" cy="106" rx="9" ry="6" fill="url(#pBlush)" opacity="${op}"/><ellipse cx="123" cy="106" rx="9" ry="6" fill="url(#pBlush)" opacity="${op}"/>`;
+    const lips = (d1, d2) => `<path d="${d1}" fill="#d98a86"/>` + line(d2, 1.2, "#a0524e");
+    const tear = (x, y) => `<path d="M${x} ${y} Q${x - 4} ${y + 10} ${x} ${y + 13} Q${x + 4} ${y + 10} ${x} ${y}Z" fill="#bfe4ff" stroke="#7fbfe8" stroke-width="1.1"/>`;
+    const mask =
+      line("M75 108 Q66 102 63 97 M125 108 Q134 102 137 97", 1.8, "#d3dae2") +
+      `<rect x="74" y="101" width="52" height="30" rx="11" fill="#fff" stroke="#d3dae2" stroke-width="1.6"/>` +
+      line("M80 111 H120 M79 118 H121 M80 125 H120", 1.1, "#e3e8ee");
+    let eyes = "", brows = browCalm, mouth = "", extra = "";
+    switch (g) {
+      case 1:
+        eyes = line("M75 93 Q83 85 91 92", 2.2) + line("M109 92 Q117 85 125 93", 2.2);
+        mouth = `<path d="M90 114 Q100 126 110 114 Q100 117 90 114Z" fill="#9b4744"/><path d="M92 114.6 Q100 117.2 108 114.6 L107 116 Q100 118 93 116Z" fill="#fff"/>`;
+        extra = blush(.85);
+        break;
+      case 2:
+        eyes = line("M75 93 Q83 86.5 91 92.5", 2) + line("M109 92.5 Q117 86.5 125 93", 2);
+        mouth = lips("M91 115 Q100 122 109 115 Q100 118.5 91 115Z", "M91 115 Q100 118.5 109 115");
+        extra = blush(.7);
+        break;
+      case 3:
+        eyes = openEye(83, .4) + openEye(117, .4);
+        mouth = lips("M92 115.5 Q100 120 108 115.5 Q100 118 92 115.5Z", "M92 115.5 Q100 118 108 115.5");
+        extra = blush(.55);
+        break;
+      case 4:
+        eyes = openEye(83) + openEye(117);
+        mouth = lips("M93 116.5 Q100 119 107 116.5 Q100 118 93 116.5Z", "M93 116.5 Q100 118 107 116.5");
+        extra = blush(.4);
+        break;
+      case 5:
+        eyes = openEye(83, -.6) + openEye(117, -.6);
+        brows = browWorry;
+        mouth = lips("M93 118.5 Q100 115.5 107 118.5 Q100 117.5 93 118.5Z", "M93 118.5 Q100 115.5 107 118.5");
+        extra = blush(.25);
+        break;
+      case 6:
+        eyes = line("M75 92.5 H91", 1.9) + `<path d="M77 92.5 Q83 96.5 89 92.5Z" fill="${ink}"/>` +
+          line("M109 92.5 H125", 1.9) + `<path d="M111 92.5 Q117 96.5 123 92.5Z" fill="${ink}"/>`;
+        brows = browWorry;
+        mouth = lips("M92 120 Q100 114 108 120 Q100 117.5 92 120Z", "M92 120 Q100 114.5 108 120");
+        extra = `<path d="M138 70 Q145 82 138 87 Q131 82 138 70Z" fill="#bfe4ff" stroke="#7fbfe8" stroke-width="1.2"/>`;
+        break;
+      case 7:
+        eyes = line("M76 88 L89 92.5 L76 97", 2.2) + line("M124 88 L111 92.5 L124 97", 2.2);
+        brows = browWorry;
+        mouth = mask;
+        break;
+      case 8:
+        eyes = line("M75 91 Q83 96 91 91", 2.2) + line("M109 91 Q117 96 125 91", 2.2);
+        brows = browWorry;
+        mouth = mask;
+        extra = tear(73, 96) + tear(127, 96) + tear(70, 112) + tear(130, 112);
+        break;
+      default:
+        eyes = openEye(83) + openEye(117);
+        mouth = line("M94 117 H106", 1.4, "#a0524e");
+    }
+    const nose = g >= 7 ? "" :
+      line("M98 97 Q96.6 104 98 107", 1, "#d6a08a") + line("M95.5 107.5 Q97.5 109.4 100 108.6 Q102.5 109.4 104.5 107.5", 1.3, "#c98a72");
+    return `${extra}${brows}${nose}<g class="${(g >= 3 && g <= 5) || g === 0 ? "blink" : ""}">${eyes}</g>${mouth}`;
+  }
+
+  function portraitSVG(g) {
+    const skin = g === 8 ? "#ecd3c3" : "#f8d9c4";
+    const dress = g >= 7 ? "#b2a2cf" : "#c4a8ea";
+    const dressLight = g >= 7 ? "#c9bfe0" : "#d9c6f5";
+    const hair = "#2a1d19";
+    const bgTop = g >= 7 ? "#e9e2cf" : "#f8ebbb";
+    const gold = g >= 7 ? "#c4b48a" : "#f0c24a";
+    const leaf = g >= 7 ? "#a3a0b5" : "#9b8fd6";
+    const strands = [
+      "M100 34 Q74 36 62 62", "M100 34 Q80 40 70 64", "M99 36 Q86 44 80 60",
+      "M100 34 Q126 36 138 62", "M100 34 Q120 40 130 64", "M101 36 Q114 44 120 60",
+    ].map((d) => `<path d="${d}" stroke="#5a4038" stroke-width=".9" fill="none" opacity=".7"/>`).join("");
+    const deco = [
+      star(32, 64, 6, gold), star(168, 56, 7, gold), star(26, 118, 4, gold), star(176, 112, 5, gold), star(150, 30, 4, gold),
+      `<path d="M14 150 Q30 132 44 142 Q30 156 14 150Z" fill="${leaf}" opacity=".8"/>`,
+      `<path d="M186 146 Q170 128 156 138 Q170 152 186 146Z" fill="${leaf}" opacity=".8"/>`,
+      `<path d="M24 34 Q40 26 46 40 Q32 46 24 34Z" fill="${leaf}" opacity=".6"/>`,
+    ].join("");
+    return `<svg viewBox="0 0 200 200" role="img" aria-label="${NAMES[g]} 표정의 초상화 마스코트">
+      <defs>
+        <filter id="pPencil" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/>
+        </filter>
+        <pattern id="pHatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="#fff" stroke-width="1" opacity=".12"/>
+        </pattern>
+        <radialGradient id="pBlush"><stop offset="0" stop-color="#ff8f96"/><stop offset="1" stop-color="#ff8f96" stop-opacity="0"/></radialGradient>
+        <radialGradient id="pFace" cx=".5" cy=".42" r=".62"><stop offset=".6" stop-color="${skin}"/><stop offset="1" stop-color="#eebfa4"/></radialGradient>
+        <linearGradient id="pBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${bgTop}"/><stop offset="1" stop-color="#e9dcf3"/></linearGradient>
+        <clipPath id="pFrame"><circle cx="100" cy="98" r="86"/></clipPath>
+      </defs>
+      <ellipse cx="100" cy="193" rx="58" ry="6" fill="#000" opacity=".14"/>
+      <circle cx="100" cy="98" r="90" fill="#fff"/>
+      <g clip-path="url(#pFrame)">
+        <rect x="0" y="0" width="200" height="200" fill="url(#pBg)"/>
+        <g filter="url(#pPencil)">
+          ${deco}
+          <path d="M58 98 Q50 62 68 42 Q100 20 132 42 Q150 62 142 98 Q140 110 134 112 L66 112 Q60 110 58 98Z" fill="${hair}"/>
+          <path d="M44 200 Q42 162 66 154 Q82 148 91 144 L109 144 Q118 148 134 154 Q158 162 156 200Z" fill="${dress}"/>
+          <ellipse cx="62" cy="164" rx="20" ry="16" fill="${dressLight}"/>
+          <ellipse cx="138" cy="164" rx="20" ry="16" fill="${dressLight}"/>
+          <path d="M90 128 L90 145 Q100 152 110 145 L110 128Z" fill="#eebfa4"/>
+          <path d="M78 152 Q89 148 100 157 Q111 148 122 152" stroke="#fff" stroke-width="2.6" stroke-dasharray=".5 4" stroke-linecap="round" fill="none" opacity=".9"/>
+          <path d="M91 138 Q100 150 109 138" stroke="#d9a93a" stroke-width=".9" fill="none"/>
+          ${star(100, 150, 3.6, gold)}
+          <ellipse cx="61" cy="100" rx="5" ry="8" fill="#eebfa4"/>
+          <ellipse cx="139" cy="100" rx="5" ry="8" fill="#eebfa4"/>
+          <path d="M100 42 C126 42 139 62 139 90 C139 116 124 134 100 135 C76 134 61 116 61 90 C61 62 74 42 100 42Z" fill="url(#pFace)"/>
+          <path d="M99.4 30 Q68 30 60 66 Q57 84 61 100 Q64 74 76 60 Q88 48 99 46Z" fill="${hair}"/>
+          <path d="M100.6 30 Q132 30 140 66 Q143 84 139 100 Q136 74 124 60 Q112 48 101 46Z" fill="${hair}"/>
+          ${strands}
+          <path d="M62 96 Q57 108 61 116 Q64 122 60 128 M65 98 Q62 108 66 114" stroke="${hair}" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+          <path d="M138 96 Q143 108 139 116 Q136 122 140 128 M135 98 Q138 108 134 114" stroke="${hair}" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+          <path d="M77 60 Q71 70 73 80" stroke="${hair}" stroke-width=".9" stroke-linecap="round" fill="none"/>
+          ${portraitFace(g)}
+        </g>
+        <rect x="0" y="0" width="200" height="200" fill="url(#pHatch)"/>
+      </g>
+    </svg>`;
+  }
+
   // 사진 마스코트: 표정은 바꿀 수 없으니 단계마다 효과를 얹는다
   let photo = store.get("photo", null);
   function cloud(x, y, k, color) {
@@ -587,7 +727,7 @@ button { cursor: pointer; }
   function setMascot(g, force) {
     if (!force && g === currentGrade && $("mascot").firstChild) return;
     currentGrade = g;
-    $("mascot").innerHTML = photo ? photoSVG(g) : mascotSVG(g);
+    $("mascot").innerHTML = photo ? photoSVG(g) : portraitSVG(g);
   }
 
   // ---------- 사진 고르기·자르기 ----------
