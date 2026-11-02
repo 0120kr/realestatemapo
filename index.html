@@ -305,7 +305,7 @@ button { cursor: pointer; }
   <p class="note">
     데이터: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo 대기질 API</a>
     (유럽 코페르니쿠스 CAMS 예측 모델). 측정소 실측값이 아니라 모델 추정값이라 에어코리아 측정값과 차이가 날 수 있어요.
-    위치 이름은 BigDataCloud, 장소 검색은 OpenStreetMap(© OpenStreetMap 기여자)을 써요. 광고와 추적 코드는 없어요.
+    위치 이름은 BigDataCloud, 장소 검색은 OpenStreetMap·Photon(© OpenStreetMap 기여자)을 써요. 광고와 추적 코드는 없어요.
   </p>
 </main>
 
@@ -314,6 +314,7 @@ button { cursor: pointer; }
   const AIR = "https://air-quality-api.open-meteo.com/v1/air-quality";
   const GEO = "https://geocoding-api.open-meteo.com/v1/search";
   const OSM = "https://nominatim.openstreetmap.org/search";
+  const PHOTON = "https://photon.komoot.io/api/";
   const REV = "https://api.bigdatacloud.net/data/reverse-geocode-client";
   const STALE_MS = 10 * 60 * 1000;
 
@@ -788,6 +789,24 @@ button { cursor: pointer; }
       seen.add(k); return true;
     });
   }
+  // Photon: 같은 OpenStreetMap 데이터를 쓰는 다른 검색 서버 (한국 영역만)
+  async function searchPhoton(q) {
+    const url = `${PHOTON}?q=${encodeURIComponent(q)}&limit=10&bbox=124.5,33,131.9,38.9`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("photon " + res.status);
+    const data = await res.json();
+    const seen = new Set();
+    return (data.features || [])
+      .filter((f) => (f.properties.countrycode || "KR").toUpperCase() === "KR")
+      .map((f) => {
+        const pr = f.properties, [lon, lat] = f.geometry.coordinates;
+        const name = pr.name || q;
+        const area = [pr.state, pr.city, pr.county, pr.district]
+          .filter((v, i, arr) => v && v !== name && arr.indexOf(v) === i).join(" ");
+        return { name, area, lat, lon };
+      })
+      .filter((r) => { const k = r.name + "|" + r.area; if (seen.has(k)) return false; seen.add(k); return true; });
+  }
   async function searchMeteo(q) {
     const url = `${GEO}?name=${encodeURIComponent(q)}&count=8&language=ko&format=json&countryCode=KR`;
     const data = await (await fetch(url)).json();
@@ -799,15 +818,27 @@ button { cursor: pointer; }
     ul.textContent = "";
     resultNote(ul, "찾는 중…");
     $("searchGo").disabled = true;
-    let list = [], failed = 0;
-    try { list = await searchOSM(q); } catch { failed++; }
-    if (!list.length) { try { list = await searchMeteo(q); } catch { failed++; } }
+    // 순서대로 시도해서 처음 결과가 나온 곳을 쓴다
+    const providers = [["OpenStreetMap", searchOSM], ["Photon", searchPhoton], ["Open-Meteo", searchMeteo]];
+    let list = [];
+    const report = [];
+    for (const [name, fn] of providers) {
+      try {
+        list = await fn(q);
+        report.push(`${name}: ${list.length}건`);
+        if (list.length) break;
+      } catch (err) {
+        report.push(`${name}: 실패(${String(err && err.message || err).slice(0, 40)})`);
+      }
+    }
     $("searchGo").disabled = false;
     ul.textContent = "";
     if (!list.length) {
-      return resultNote(ul, failed === 2
-        ? "검색하지 못했어요. 인터넷 연결을 확인해 주세요."
+      const allFailed = report.every((r) => r.includes("실패"));
+      resultNote(ul, allFailed
+        ? "검색 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요."
         : "검색 결과가 없어요. ‘역삼동’, ‘해운대구’처럼 동이나 구 이름으로 찾아보세요.");
+      return resultNote(ul, report.join(" · "));
     }
     for (const r of list) {
       const li = document.createElement("li");
