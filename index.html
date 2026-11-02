@@ -289,7 +289,7 @@ button { cursor: pointer; }
   </div>
 
   <div class="panel">
-    <h2>기타 오염물질 <span>환경부 4단계 기준</span></h2>
+    <h2>기타 오염물질 <span>WHO 8단계 기준</span></h2>
     <dl class="gases" id="gases"></dl>
   </div>
 
@@ -304,13 +304,13 @@ button { cursor: pointer; }
   </div>
 
   <div class="panel">
-    <h2>8단계 기준 <span>WHO 기준, ㎍/㎥</span></h2>
+    <h2>8단계 기준 <span>WHO 기준, 미세·초미세 ㎍/㎥, 가스 ppm</span></h2>
     <div class="std-wrap"><table class="std" id="std"></table></div>
   </div>
 
   <div class="panel" id="akPanel">
     <h2>에어코리아 실측값 <span id="akState">꺼짐</span></h2>
-    <p class="note" id="akHelp">지금 값은 예측 모델 추정치예요. 공공데이터포털(data.go.kr)에서 무료 인증키를 받아 넣으면, 가까운 에어코리아 측정소에서 잰 실제 값을 보여드려요. 키는 이 휴대폰에만 저장돼요.</p>
+    <p class="note" id="akHelp">공공데이터포털 인증키로 가까운 에어코리아 측정소의 실제 값을 받아와요. 앱에 기본 키가 들어 있으면 따로 넣지 않아도 돼요. 다른 키를 쓰려면 넣고 저장하세요. 칸을 비우고 저장하면 기본 키로 돌아가요.</p>
     <form class="search-row" id="akForm" style="margin-top:10px">
       <input id="akKey" type="text" placeholder="일반 인증키 (Decoding) 붙여넣기" autocomplete="off" spellcheck="false" style="min-height:44px;padding:0 12px;border-radius:12px;border:0;background:#fff;color:#1d2430;font-family:var(--font-data);font-size:12px">
       <button class="search-go" type="submit">저장</button>
@@ -334,17 +334,15 @@ button { cursor: pointer; }
   const REV = "https://api.bigdatacloud.net/data/reverse-geocode-client";
   const STALE_MS = 10 * 60 * 1000;
 
-  // WHO 기준 8단계 (각 단계의 상한값, 마지막 단계는 그 이상)
-  // 미세먼지는 미세미세 8단계 구간과 같다. 초미세먼지는 WHO 4단계 경계(9·15·50)를 지키며 나눈 값이다.
+  // WHO 기준 8단계 (미세미세 8단계 기준표와 같은 구간, 각 단계의 상한값. 마지막 단계는 그 이상)
   // 화면 전체 등급은 미세·초미세 중 더 나쁜 쪽을 따른다.
   const STD8 = {
     pm10: [10, 22, 35, 45, 75, 100, 150],
-    pm25: [5, 9, 12, 15, 35, 50, 75],
+    pm25: [5, 9, 12, 15, 37, 50, 75],
+    o3: [0.02, 0.03, 0.06, 0.09, 0.12, 0.15, 0.38],   // ppm
+    no2: [0.02, 0.03, 0.05, 0.06, 0.13, 0.2, 1.1],    // ppm
   };
-  // 환경부 4단계 (ppm)
-  const STD4 = { o3: [0.030, 0.090, 0.150], no2: [0.030, 0.060, 0.200] };
   const NAMES = ["정보없음", "최고", "좋음", "양호", "보통", "나쁨", "상당히 나쁨", "매우 나쁨", "최악"];
-  const NAMES4 = ["정보없음", "좋음", "보통", "나쁨", "매우나쁨"];
   const ADVICE = [
     "대기질 정보를 불러오지 못했어요.",
     "공기가 아주 맑아요! 창문 활짝 열고 밖으로 나가요.",
@@ -367,15 +365,9 @@ button { cursor: pointer; }
 
   const grade8 = (v, cuts) => {
     if (v == null || Number.isNaN(v)) return 0;
-    const r = Math.round(v);
+    const r = cuts[0] < 1 ? Math.round(v * 1000) / 1000 : Math.round(v);
     const i = cuts.findIndex((c) => r <= c);
     return i < 0 ? 8 : i + 1;
-  };
-  const grade4 = (v, cuts) => {
-    if (v == null || Number.isNaN(v)) return 0;
-    const r = Math.round(v * 1000) / 1000;
-    const i = cuts.findIndex((c) => r <= c);
-    return i < 0 ? 4 : i + 1;
   };
   const worst = (p10, p25) => Math.max(grade8(p10, STD8.pm10), grade8(p25, STD8.pm25));
   // ㎍/㎥ → ppm (25℃, 1기압)
@@ -855,7 +847,10 @@ button { cursor: pointer; }
   function flashMsg(t) { showMsg(t); msgTimer = setTimeout(hideMsg, 2800); }
 
   // ---------- 에어코리아 실측값 ----------
-  let akKey = store.get("akKey", "");
+  // 기본 인증키는 APK를 빌드할 때 GitHub 비밀값 AK_KEY로 채워진다. 저장소에는 키를 두지 않는다.
+  const AK_BUILD_KEY = "__AK_KEY__";
+  const AK_DEFAULT_KEY = AK_BUILD_KEY.startsWith("__") ? "" : AK_BUILD_KEY;
+  let akKey = store.get("akKey", "") || AK_DEFAULT_KEY;
   const akParam = (k) => (k.includes("%") ? k : encodeURIComponent(k));
   async function akGet(path, params) {
     const q = Object.entries({ returnType: "json", ...params }).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
@@ -899,13 +894,14 @@ button { cursor: pointer; }
     throw new Error("가까운 측정소에 최근 측정값이 없어요");
   }
   function akStatus(text) { $("akState").textContent = text; }
-  $("akKey").value = akKey;
-  akStatus(akKey ? "켜짐" : "꺼짐");
+  $("akKey").value = akKey === AK_DEFAULT_KEY ? "" : akKey;
+  akStatus(akKey ? (akKey === AK_DEFAULT_KEY ? "기본 키" : "켜짐") : "꺼짐");
   $("akForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    akKey = $("akKey").value.trim();
-    store.set("akKey", akKey);
+    akKey = $("akKey").value.trim() || AK_DEFAULT_KEY;
+    store.set("akKey", akKey === AK_DEFAULT_KEY ? "" : akKey);
     try { localStorage.removeItem("akStations"); } catch {}
+    $("akKey").value = akKey === AK_DEFAULT_KEY ? "" : akKey;
     akStatus(akKey ? "확인 중" : "꺼짐");
     $("akKey").blur();
     load(true);
@@ -1000,10 +996,10 @@ button { cursor: pointer; }
     $("pm25").innerHTML = pmHTML("초미세먼지", "PM2.5", c.pm2_5, g25);
 
     const o3 = m?.o3 ?? o3ppm(c.ozone), no2 = m?.no2 ?? no2ppm(c.nitrogen_dioxide);
-    const go3 = grade4(o3, STD4.o3), gno2 = grade4(no2, STD4.no2);
+    const go3 = grade8(o3, STD8.o3), gno2 = grade8(no2, STD8.no2);
     $("gases").innerHTML =
-      `<div class="gas"><dt>오존</dt><dd>${o3 == null ? "–" : o3.toFixed(3)} ppm<b>${NAMES4[go3]}</b></dd></div>` +
-      `<div class="gas"><dt>이산화질소</dt><dd>${no2 == null ? "–" : no2.toFixed(3)} ppm<b>${NAMES4[gno2]}</b></dd></div>`;
+      `<div class="gas"><dt>오존</dt><dd>${o3 == null ? "–" : o3.toFixed(3)} ppm<b>${NAMES[go3]}</b></dd></div>` +
+      `<div class="gas"><dt>이산화질소</dt><dd>${no2 == null ? "–" : no2.toFixed(3)} ppm<b>${NAMES[gno2]}</b></dd></div>`;
 
     renderHours(data);
     renderDays(data);
@@ -1062,11 +1058,11 @@ button { cursor: pointer; }
 
   function renderStd() {
     const range = (cuts) => cuts.map((c, i) => `${i === 0 ? 0 : cuts[i - 1] + 1}–${c}`).concat(`${cuts[cuts.length - 1] + 1}+`);
-    const r10 = range(STD8.pm10), r25 = range(STD8.pm25);
+    const rangeGas = (cuts) => cuts.map((c, i) => `${i === 0 ? 0 : cuts[i - 1]}–${c}`).concat(`${cuts[cuts.length - 1]}+`);
+    const rows = [["미세", range(STD8.pm10)], ["초미세", range(STD8.pm25)], ["오존", rangeGas(STD8.o3)], ["이산화질소", rangeGas(STD8.no2)]];
     const head = NAMES.slice(1).map((n, i) => `<th><i style="background:${COLORS[i + 1]}"></i>${n}</th>`).join("");
-    $("std").innerHTML = `<thead><tr><th></th>${head}</tr></thead><tbody>
-      <tr><td>미세</td>${r10.map((r) => `<td>${r}</td>`).join("")}</tr>
-      <tr><td>초미세</td>${r25.map((r) => `<td>${r}</td>`).join("")}</tr></tbody>`;
+    $("std").innerHTML = `<thead><tr><th></th>${head}</tr></thead><tbody>` +
+      rows.map(([n, rs]) => `<tr><td>${n}</td>${rs.map((r) => `<td>${r}</td>`).join("")}</tr>`).join("") + `</tbody>`;
   }
 
   function renderEmpty() {

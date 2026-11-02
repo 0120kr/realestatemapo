@@ -27,8 +27,12 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Create Android project
+        env:
+          AK_KEY: ${{ secrets.AK_KEY }}
         run: |
           sh scripts/build-www.sh
+          # 저장소 비밀값 AK_KEY가 있으면 앱의 기본 에어코리아 인증키로 넣는다
+          if [ -n "$AK_KEY" ]; then sed -i "s/__AK_KEY__/$AK_KEY/" www/index.html; fi
           npx cap add android
 
       - name: Add location permission, icons and splash
