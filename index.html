@@ -385,12 +385,17 @@ button { cursor: pointer; }
   function girlFace(g) {
     const ink = "#3b2b27";
     const s = `stroke="${ink}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
-    const openEye = (cx) =>
-      `<ellipse cx="${cx}" cy="102" rx="7" ry="8.6" fill="${ink}"/>` +
-      `<circle cx="${cx + 2.4}" cy="98.6" r="2.6" fill="#fff"/><circle cx="${cx - 2.6}" cy="105.5" r="1.2" fill="#fff" opacity=".8"/>` +
-      `<path d="M${cx - 8.5} 95.5 Q${cx} 90 ${cx + 8.5} 95.5" ${s} stroke-width="2.4"/>`;
-    const worriedBrows = `<path d="M71 86 L87 81" ${s} stroke-width="2.6"/><path d="M113 81 L129 86" ${s} stroke-width="2.6"/>`;
-    const calmBrows = `<path d="M72 83 Q79 80 86 82" ${s} stroke-width="2.2"/><path d="M114 82 Q121 80 128 83" ${s} stroke-width="2.2"/>`;
+    const openEye = (cx) => {
+      const id = cx < 100 ? "eyeL" : "eyeR";
+      const shape = `M${cx - 11} 103 Q${cx - 1} 90 ${cx + 11} 101 Q${cx + 1} 112 ${cx - 11} 103 Z`;
+      return `<clipPath id="${id}"><path d="${shape}"/></clipPath>` +
+        `<path d="${shape}" fill="#fffaf6"/>` +
+        `<g clip-path="url(#${id})"><circle cx="${cx}" cy="101.5" r="7.2" fill="#4a2f27"/><circle cx="${cx}" cy="101.5" r="3.6" fill="#1d1210"/>` +
+        `<circle cx="${cx + 2.6}" cy="98.6" r="2.4" fill="#fff"/><circle cx="${cx - 2.6}" cy="104.6" r="1.1" fill="#fff" opacity=".8"/></g>` +
+        `<path d="M${cx - 12} 103.4 Q${cx - 1} 88.6 ${cx + 12} 100.8" ${s} stroke-width="3"/>`;
+    };
+    const worriedBrows = `<path d="M69 88 L87 83" ${s} stroke-width="2.2"/><path d="M113 83 L131 88" ${s} stroke-width="2.2"/>`;
+    const calmBrows = `<path d="M69 87 Q78 83.5 87 85" stroke="#4a3530" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M113 85 Q122 83.5 131 87" stroke="#4a3530" stroke-width="2" stroke-linecap="round" fill="none"/>`;
     const blush = (op) => `<ellipse cx="66" cy="117" rx="9" ry="6" fill="#ff8f9f" opacity="${op}"/><ellipse cx="134" cy="117" rx="9" ry="6" fill="#ff8f9f" opacity="${op}"/>`;
     const tear = (x, y) => `<path d="M${x} ${y} Q${x - 5} ${y + 12} ${x} ${y + 16} Q${x + 5} ${y + 12} ${x} ${y}Z" fill="#a9dcff" stroke="#6bb8ec" stroke-width="1.5"/>`;
     const mask =
@@ -412,18 +417,18 @@ button { cursor: pointer; }
         break;
       case 3:
         eyes = openEye(80) + openEye(120);
-        mouth = `<path d="M90 120 Q100 128 110 120" ${s} stroke="#9a4a46"/>`;
-        extra = blush(.4);
+        mouth = `<path d="M90 123 Q100 130 110 123 Q100 127.5 90 123 Z" fill="#d98585"/><path d="M90 123 Q100 127.5 110 123" stroke="#a5534f" stroke-width="1.6" stroke-linecap="round" fill="none"/>`;
+        extra = blush(.35);
         break;
       case 4:
         eyes = openEye(80) + openEye(120);
-        mouth = `<path d="M93 122 Q100 125 107 122" ${s} stroke="#9a4a46"/>`;
-        extra = blush(.25);
+        mouth = `<path d="M92 124 Q100 128 108 124 Q100 126.5 92 124 Z" fill="#d98585"/><path d="M92 124 Q100 126 108 124" stroke="#a5534f" stroke-width="1.6" stroke-linecap="round" fill="none"/>`;
+        extra = blush(.22);
         break;
       case 5:
         eyes = openEye(80) + openEye(120);
         brows = worriedBrows;
-        mouth = `<path d="M92 125 Q100 120 108 125" ${s} stroke="#9a4a46"/>`;
+        mouth = `<path d="M92 127 Q100 122 108 127 Q100 125 92 127 Z" fill="#d98585"/><path d="M92 127 Q100 122.5 108 127" stroke="#a5534f" stroke-width="1.8" stroke-linecap="round" fill="none"/>`;
         break;
       case 6:
         eyes = `<path d="M71 101 H89" ${s}/><path d="M73 101 Q80 109 87 101 Z" fill="${ink}"/>` +
@@ -447,7 +452,7 @@ button { cursor: pointer; }
         eyes = openEye(80) + openEye(120);
         mouth = `<path d="M94 123 H106" ${s} stroke="#9a4a46"/>`;
     }
-    const nose = g >= 7 ? "" : `<path d="M98.5 111 Q100 113 101.5 111" stroke="#e0a080" stroke-width="2" stroke-linecap="round" fill="none"/>`;
+    const nose = g >= 7 ? "" : `<path d="M98 108 Q97 112 98.5 114" stroke="#eab49a" stroke-width="1.4" stroke-linecap="round" fill="none"/><path d="M96.5 114.5 Q100 116.5 103.5 114.5" stroke="#d99a80" stroke-width="1.8" stroke-linecap="round" fill="none"/>`;
     return `${extra}${brows}${nose}<g class="${g >= 3 && g <= 5 || g === 0 ? "blink" : ""}">${eyes}</g>${mouth}`;
   }
 
@@ -475,24 +480,25 @@ button { cursor: pointer; }
       <ellipse cx="88" cy="190" rx="10" ry="5.5" fill="#6b4ea0"/>
       <ellipse cx="112" cy="190" rx="10" ry="5.5" fill="#6b4ea0"/>
       ${arms}
-      <path d="M80 140 Q100 148 120 140 L142 186 Q100 196 58 186 Z" fill="${dress}"/>
+      <path d="M78 141 Q90 136 100 145 Q110 136 122 141 L142 186 Q100 196 58 186 Z" fill="${dress}"/>
+      <path d="M80 142 Q90 138 100 147 Q110 138 120 142" stroke="#fff" stroke-width="3" stroke-dasharray="0.5 4.5" stroke-linecap="round" fill="none" opacity=".9"/>
       <path d="M62 182 Q100 192 138 182" stroke="#fff" stroke-width="3" stroke-dasharray="1 6" stroke-linecap="round" fill="none" opacity=".8"/>
-      <circle cx="74" cy="148" r="13" fill="${sleeve}"/>
-      <circle cx="126" cy="148" r="13" fill="${sleeve}"/>
-      <rect x="93" y="128" width="14" height="14" rx="5" fill="${skinShade}"/>
-      <path d="M86 140 Q100 152 114 140" stroke="#e2b23a" stroke-width="1.6" fill="none"/>
-      ${star(100, 150, 5, "#ffcf3f")}
-      <ellipse cx="100" cy="84" rx="61" ry="57" fill="${hair}"/>
-      <ellipse cx="100" cy="31" rx="13" ry="10" fill="${hair}"/>
-      <circle cx="43" cy="104" r="9" fill="${skin}"/>
-      <circle cx="157" cy="104" r="9" fill="${skin}"/>
-      <ellipse cx="100" cy="100" rx="55" ry="50" fill="${skin}"/>
-      <path d="M100 46 Q62 42 46 100 Q52 68 98 60 Z" fill="${hair}"/>
-      <path d="M100 46 Q138 42 154 100 Q148 68 102 60 Z" fill="${hair}"/>
-      <path d="M48 96 Q43 112 50 126" stroke="${hair}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      <path d="M152 96 Q157 112 150 126" stroke="${hair}" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      <path d="M97 60 Q90 70 93 80" stroke="${hair}" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-      <g transform="rotate(${g >= 7 ? 30 : 0} 138 62)">${star(138, 62, 9, pin)}</g>
+      <circle cx="73" cy="148" r="13" fill="${sleeve}"/>
+      <circle cx="127" cy="148" r="13" fill="${sleeve}"/>
+      <path d="M66 144 h.1 M74 140 h.1 M78 151 h.1 M69 154 h.1 M134 144 h.1 M126 140 h.1 M122 151 h.1 M131 154 h.1" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+      <rect x="93" y="128" width="14" height="16" rx="5" fill="${skinShade}"/>
+      <path d="M93 132 Q100 143 107 132" stroke="#e2b23a" stroke-width="1.1" fill="none"/>
+      ${star(100, 141, 4.2, "#ffcf3f")}
+      <ellipse cx="100" cy="92" rx="60" ry="56" fill="${hair}"/>
+      <path d="M42 92 Q36 126 58 140 L142 140 Q164 126 158 92 Z" fill="${hair}"/>
+      <path d="M100 50 C136 50 156 74 155 102 C154 126 134 148 100 150 C66 148 46 126 45 102 C44 74 64 50 100 50 Z" fill="${skin}"/>
+      <path d="M99.3 38 Q60 34 44 84 Q41 102 47 114 Q51 86 70 72 Q86 64 99 67 Z" fill="${hair}"/>
+      <path d="M100.7 38 Q140 34 156 84 Q159 102 153 114 Q149 86 130 72 Q114 64 101 67 Z" fill="${hair}"/>
+      <path d="M50 84 Q44 102 51 120 M55 80 Q49 96 54 110" stroke="${hair}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      <path d="M150 84 Q156 102 149 120 M145 80 Q151 96 146 110" stroke="${hair}" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+      <path d="M70 72 Q64 86 67 96" stroke="${hair}" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <path d="M84 37 Q78 31 72 33" stroke="${hair}" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <g transform="rotate(${g >= 7 ? 30 : 0} 140 60)">${star(140, 60, 8, pin)}</g>
       ${girlFace(g)}
     </svg>`;
   }
