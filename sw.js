@@ -1,5 +1,5 @@
 // 앱 화면만 캐시한다. 대기질 데이터는 앱이 직접 받아오고 마지막 값을 따로 저장한다.
-const CACHE = "oneulmeonji-v6";
+const CACHE = "oneulmeonji-v7";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
